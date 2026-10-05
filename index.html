@@ -89,6 +89,21 @@
       box-shadow: 0 1px 2px rgba(0,0,0,0.15);
     }
     .btn-google:hover { background: #f3f4f6; }
+    .btn-sync-all {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 9px 15px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.2s;
+    }
+    .btn-sync-all:hover { background: #1d4ed8; }
     .sync-status {
       font-size: 0.85rem;
       display: inline-flex;
@@ -148,10 +163,10 @@
 <div class="container">
   <header>
     <h1>🏋🏻‍♂️ 벌크업의 정석 트레이닝 센터</h1>
-    <p>1RM 탑세트 자동 연동 & 구글 스프레드시트 실시간 동기화</p>
+    <p>1RM 탑세트 자동 연동 & 구글 스프레드시트 실시간 양방향 동기화</p>
   </header>
 
-  <!-- 🔗 구글 로그인 및 내 드라이브 시트 자동 생성/동기화 바 -->
+  <!-- 🔗 구글 로그인 및 시트 실시간 동기화 바 -->
   <div class="sheet-sync-bar">
     <div class="sync-left">
       <button id="btn-google-login" class="btn-google" onclick="handleGoogleAuthClick()">
@@ -161,7 +176,11 @@
           <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.98 0 12s.46 3.84 1.26 5.42l4.02-3.15z"/>
           <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
         </svg>
-        <span id="btn-google-text">Google 로그인으로 내 시트 자동 생성</span>
+        <span id="btn-google-text">Google 로그인 (시트 자동 연동)</span>
+      </button>
+
+      <button id="btn-sync-all" class="btn-sync-all" style="display:none;" onclick="syncCurrentDayToSheetManually()">
+        🔄 현재 일자 시트로 즉시 전송
       </button>
 
       <span id="sheet-link-wrapper" style="display:none;">
@@ -172,7 +191,7 @@
     </div>
 
     <div class="sync-status" id="sync-status-badge">
-      <span style="color:var(--subtext);">☁️ 시트 미연동 (로컬 브라우저 저장 모드)</span>
+      <span style="color:var(--subtext);">☁️ 시트 미연동 (로그인 시 실시간 반영)</span>
     </div>
   </div>
 
@@ -238,7 +257,7 @@
   <section id="tab-1rm" class="tab-content">
     <div class="card">
       <div class="card-title-bar">
-        <h2>메인 3종목 1RM 설정 (탑세트 연동의 기준)</h2>
+        <h2>메인 3종목 1RM 설정 (시트 실시간 반영)</h2>
       </div>
       <div class="grid-3">
         <div class="form-group">
@@ -254,8 +273,9 @@
           <input type="number" id="rm-squat" value="150" step="0.5" oninput="saveAndRefresh()">
         </div>
       </div>
-      <p style="font-size: 0.82rem; color: var(--subtext); margin-top: 6px;">
-        * 여기서 1RM을 수정하면 루틴표 내 모든 메인 종목 <strong>탑세트(3세트째)의 중량이 단계별 비율에 맞춰 자동 재계산</strong>되어 연동됩니다.
+      <button class="calc-btn" onclick="saveAndRefresh(true)">💾 1RM 시트로 즉시 저장 및 연동</button>
+      <p style="font-size: 0.82rem; color: var(--subtext); margin-top: 8px;">
+        * 수정 시 루틴표의 <strong>탑세트(3세트째) 목표 중량이 재계산</strong>되며, 구글 스프레드시트의 <code>중량/과부하/칼로리 차트</code> 시트에도 실시간 동기화됩니다.
       </p>
     </div>
 
@@ -304,7 +324,7 @@
         <div class="card-title-bar"><h2>신체 스펙 입력</h2></div>
         <div class="form-group">
           <label>성별</label>
-          <select id="gender"><option value="m">남성</option><option value="f">여성</option></select>
+          <select id="gender"><option value="남성">남성</option><option value="여성">여성</option></select>
         </div>
         <div class="form-group">
           <label>나이 (세)</label>
@@ -323,11 +343,11 @@
           <select id="activity">
             <option value="1.2">비활동적 (거의 운동 안 함)</option>
             <option value="1.375">가벼운 활동 (주 1~3회)</option>
-            <option value="1.55" selected>보통 활동 (주 3~5회 운동 - 시트 기준)</option>
+            <option value="1.55" selected>일주일에 3-5일 운동해요 (시트 기준)</option>
             <option value="1.725">매우 활동적 (주 6~7회)</option>
           </select>
         </div>
-        <button class="calc-btn" onclick="calcDiet()">칼로리 & 영양 비율 재계산</button>
+        <button class="calc-btn" onclick="calcDiet(true)">💾 칼로리 계산 및 시트 실시간 저장</button>
       </div>
 
       <div class="card">
@@ -437,14 +457,12 @@
   // ========================================================
   // 🔑 1. 구글 OAuth 클라이언트 ID 설정
   // ========================================================
-  // ⬇️ 아래 따옴표 안에 발급받으신 클라이언트 ID를 붙여넣으세요!
   const GOOGLE_CLIENT_ID = "368195400293-1h2mkirlqjlgi3ue480t44rirkolrgeh.apps.googleusercontent.com";
-
-  // 복사할 원본 템플릿 스프레드시트 ID
   const TEMPLATE_SHEET_ID = "19dDY5KEl_JSqSLIjdjMdqW-APnoxub1kkGRV1_GzY14";
 
   let tokenClient = null;
-  let gAccessToken = null;
+  // 세션 스토리지에서 복원하여 새로고침 시에도 로그인 유지
+  let gAccessToken = sessionStorage.getItem('bulk_g_access_token') || null;
   let userSpreadsheetId = localStorage.getItem('bulk_user_sheet_id');
 
   // ========================================================
@@ -461,6 +479,8 @@
           return;
         }
         gAccessToken = resp.access_token;
+        sessionStorage.setItem('bulk_g_access_token', gAccessToken);
+
         document.getElementById('sync-status-badge').innerHTML = '<span style="color:var(--warning);">🔄 내 구글 드라이브 시트 확인 중...</span>';
 
         if (!userSpreadsheetId) {
@@ -483,48 +503,59 @@
     tokenClient.requestAccessToken({ prompt: '' });
   }
 
-  // 사용자의 구글 드라이브에 원본 시트 자동 복사 생성
-// 사용자의 구글 드라이브에 원본 시트 사본 생성 및 연동
-async function createTemplateCopyInUserDrive() {
-  const badge = document.getElementById('sync-status-badge');
-  badge.innerHTML = '<span style="color:var(--warning);">📂 내 드라이브에 시트 자동 생성 중...</span>';
+  async function createTemplateCopyInUserDrive() {
+    const badge = document.getElementById('sync-status-badge');
+    badge.innerHTML = '<span style="color:var(--warning);">📂 내 드라이브에 시트 자동 생성 중...</span>';
 
-  try {
-    // 1. Google Drive API로 원본 시트를 내 드라이브에 백그라운드 복제
-    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${TEMPLATE_SHEET_ID}/copy`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${gAccessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        name: '🏋🏻‍♂️ 벌크업의 정석 (내 운동 일지)'
-      })
-    });
+    try {
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${TEMPLATE_SHEET_ID}/copy`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${gAccessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: '🏋🏻‍♂️ 벌크업의 정석 (내 운동 일지)'
+        })
+      });
 
-    const data = await res.json();
-    
-    // 2. 생성된 시트 ID를 자동으로 추출해 브라우저에 저장하고 연동 완료
-    if (data.id) {
-      userSpreadsheetId = data.id;
-      localStorage.setItem('bulk_user_sheet_id', data.id);
-      showConnectedState(data.id);
-      alert('🎉 내 구글 드라이브에 시트가 자동 생성되었습니다!\n지금부터 운동 기록이 내 시트로 실시간 저장됩니다.');
-    } else {
-      throw new Error(data.error?.message || '시트 복사 실패');
+      const data = await res.json();
+      if (data.id) {
+        userSpreadsheetId = data.id;
+        localStorage.setItem('bulk_user_sheet_id', data.id);
+        showConnectedState(data.id);
+        alert('🎉 내 구글 드라이브에 벌크업 시트가 자동 생성되었습니다!\n지금부터 웹앱에 입력하는 모든 내용이 시트에 실시간 반영됩니다.');
+      } else {
+        throw new Error(data.error?.message || '시트 복사 실패');
+      }
+    } catch (err) {
+      badge.innerHTML = `<span style="color:var(--danger);">⚠️ 시트 생성 실패: ${err.message}</span>`;
     }
-  } catch (err) {
-    badge.innerHTML = `<span style="color:var(--danger);">⚠️ 시트 생성 실패: ${err.message}</span>`;
   }
-}
 
   function showConnectedState(sheetId) {
     document.getElementById('sync-status-badge').innerHTML = '<span style="color:var(--success);">☁️ 내 구글 시트 실시간 연동됨</span>';
     document.getElementById('btn-google-text').innerText = '구글 계정 연동 완료';
+    document.getElementById('btn-sync-all').style.display = 'inline-flex';
     const linkWrapper = document.getElementById('sheet-link-wrapper');
     const link = document.getElementById('user-sheet-link');
     link.href = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
     linkWrapper.style.display = 'inline-block';
+  }
+
+  function checkAuthOrAlert() {
+    if (!userSpreadsheetId) {
+      alert("⚠️ 먼저 상단의 [Google 로그인]을 눌러 내 구글 시트를 연동해 주세요!");
+      return false;
+    }
+    if (!gAccessToken) {
+      const badge = document.getElementById('sync-status-badge');
+      badge.innerHTML = '<span style="color:var(--danger);">⚠️ 로그인 만료 (상단 Google 로그인 클릭)</span>';
+      alert("⚠️ 구글 인증 토큰이 만료되었거나 페이지를 새로고침했습니다.\n상단의 [Google 로그인] 버튼을 다시 한 번 눌러주세요.");
+      handleGoogleAuthClick();
+      return false;
+    }
+    return true;
   }
 
   // ========================================================
@@ -543,7 +574,6 @@ async function createTemplateCopyInUserDrive() {
     "8.5": { pct: 0.50, topReps: "8~10회",  topRIR: "RIR 4", subReps: "8~10회",  subRIR: "RIR 4",   rest: "1분 30초", isDeload: true,  desc: "프로그램 완료 최종 디로딩 — 피로 누적 해소 및 컨디셔닝 회복." }
   };
 
-  // 9일 주기 운동 루틴
   const ROUTINE_TEMPLATE = [
     {
       dayId: "day1", dayTitle: "Day 1: 밀기 (가슴 / 삼두 / 어깨)",
@@ -826,7 +856,7 @@ async function createTemplateCopyInUserDrive() {
   }
 
   // ========================================================
-  // 4. 세트 입력 감지 & LocalStorage 저장 & Google Sheets API 실시간 동기화
+  // 4. 구글 시트 양방향 실시간 동기화 엔진
   // ========================================================
   let syncDebounceTimer = null;
 
@@ -834,7 +864,7 @@ async function createTemplateCopyInUserDrive() {
     calculateAllVolumes(stage);
     saveInputsToStorage();
 
-    if (!gAccessToken || !userSpreadsheetId) return;
+    if (!userSpreadsheetId || !gAccessToken) return;
 
     const badge = document.getElementById('sync-status-badge');
     badge.innerHTML = '<span style="color:var(--warning);">⏳ 시트 동기화 대기 중...</span>';
@@ -849,24 +879,35 @@ async function createTemplateCopyInUserDrive() {
           setsData.push({ set: s, weight: wVal, reps: rVal });
         }
       }
-      syncToGoogleSheetsAPI(stage, dayId, exName, setsData);
+      syncWorkoutToGoogleSheets(stage, dayId, exName, setsData);
     }, 1200);
   }
 
-  // Google Sheets API로 시트 행을 검색하고 값 기록
-  async function syncToGoogleSheetsAPI(stage, dayId, exName, setsData) {
+  // 4-1. 운동 기록을 해당 단계 시트에 실시간 저장
+  async function syncWorkoutToGoogleSheets(stage, dayId, exName, setsData) {
+    if (!checkAuthOrAlert()) return;
+
     const badge = document.getElementById('sync-status-badge');
-    badge.innerHTML = '<span style="color:var(--warning);">🔄 구글 시트로 기록 전송 중...</span>';
+    badge.innerHTML = '<span style="color:var(--warning);">🔄 구글 시트로 운동 기록 저장 중...</span>';
 
     const stageSheetName = stage.includes("단계") ? stage : (stage + "단계");
     const dayNum = parseInt(dayId.replace("day", ""), 10);
 
     try {
-      // 1) 해당 단계 시트의 A1:H60 범위 데이터 조회 (종목 행 위치 확인)
+      // 1) 해당 단계 시트의 A1:H80 범위 데이터 조회 (종목 행 위치 확인)
       const getRes = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${userSpreadsheetId}/values/${encodeURIComponent(stageSheetName)}!A1:H60`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${userSpreadsheetId}/values/${encodeURIComponent(stageSheetName)}!A1:H80`,
         { headers: { 'Authorization': `Bearer ${gAccessToken}` } }
       );
+
+      if (getRes.status === 401) {
+        gAccessToken = null;
+        sessionStorage.removeItem('bulk_g_access_token');
+        badge.innerHTML = '<span style="color:var(--danger);">⚠️ 로그인 만료 (상단 Google 로그인 클릭)</span>';
+        alert('구글 로그인 세션이 만료되었습니다. 상단의 [Google 로그인] 버튼을 눌러주세요.');
+        return;
+      }
+
       const sheetData = await getRes.json();
       const rows = sheetData.values || [];
 
@@ -876,7 +917,7 @@ async function createTemplateCopyInUserDrive() {
 
       for (let i = 0; i < rows.length; i++) {
         const colA = String(rows[i][0] || '').trim();
-        if (!isNaN(parseInt(colA, 10))) curDay = parseInt(colA, 10);
+        if (!isNaN(parseInt(colA, 10)) && colA !== "") curDay = parseInt(colA, 10);
 
         if (curDay === dayNum) {
           for (let j = 1; j <= 4; j++) {
@@ -891,12 +932,11 @@ async function createTemplateCopyInUserDrive() {
       }
 
       if (targetRow === -1) {
-        badge.innerHTML = `<span style="color:var(--danger);">⚠️ 시트에서 ${exName} 위치를 찾지 못함</span>`;
+        badge.innerHTML = `<span style="color:var(--danger);">⚠️ 시트에서 '${exName}' 위치를 찾지 못함</span>`;
         return;
       }
 
       // 2) 세트 1 ~ 세트 4 (열 I:P) 데이터 구성
-      // I: 세트1 W, J: 세트1 R, K: 세트2 W, L: 세트2 R, M: 세트3 W, N: 세트3 R, O: 세트4 W, P: 세트4 R
       const updateRowValues = ['', '', '', '', '', '', '', ''];
       setsData.forEach(s => {
         const idx = (s.set - 1) * 2;
@@ -906,7 +946,7 @@ async function createTemplateCopyInUserDrive() {
         }
       });
 
-      // 3) 셀 업데이트 실행
+      // 3) 셀 업데이트 실행 (I열:P열)
       const putRes = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/${userSpreadsheetId}/values/${encodeURIComponent(stageSheetName)}!I${targetRow}:P${targetRow}?valueInputOption=USER_ENTERED`,
         {
@@ -920,15 +960,273 @@ async function createTemplateCopyInUserDrive() {
       );
 
       if (putRes.ok) {
-        badge.innerHTML = '<span style="color:var(--success);">☁️ 구글 시트 실시간 동기화 완료!</span>';
+        badge.innerHTML = `<span style="color:var(--success);">☁️ [${exName}] 시트 동기화 완료!</span>`;
         setTimeout(() => {
-          badge.innerHTML = '<span style="color:var(--success);">☁️ 내 구글 시트 실시간 연동됨</span>';
+          badge.innerHTML = '<span style="color:var(--success);">☁️️ 내 구글 시트 실시간 연동됨</span>';
         }, 2000);
       } else {
         throw new Error('시트 저장 응답 오류');
       }
     } catch (e) {
       badge.innerHTML = `<span style="color:var(--danger);">⚠️ 시트 저장 실패: ${e.message}</span>`;
+    }
+  }
+
+  // 4-2. 칼로리 & 탄단지 설정값 시트에 저장 (중량/과부하/칼로리 차트 시트)
+  async function syncDietToGoogleSheet(dietData) {
+    if (!checkAuthOrAlert()) return;
+
+    const badge = document.getElementById('sync-status-badge');
+    badge.innerHTML = '<span style="color:var(--warning);">🔄 칼로리 & 영양 데이터 시트로 저장 중...</span>';
+
+    try {
+      const sheetName = "중량/과부하/칼로리 차트";
+      // 1) 전체 차트 시트 데이터 로드
+      const getRes = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${userSpreadsheetId}/values/${encodeURIComponent(sheetName)}!A1:Z30`,
+        { headers: { 'Authorization': `Bearer ${gAccessToken}` } }
+      );
+      const sheetData = await getRes.json();
+      const rows = sheetData.values || [];
+
+      // 업데이트할 셀 목록 탐색
+      const updates = [];
+      for (let r = 0; r < rows.length; r++) {
+        for (let c = 0; c < (rows[r] || []).length; c++) {
+          const val = String(rows[r][c] || '').trim();
+
+          if (val === '성별') updates.push({ range: `${colLetter(c+1)}${r+1}`, val: dietData.gender });
+          if (val === '나이') updates.push({ range: `${colLetter(c+1)}${r+1}`, val: dietData.age });
+          if (val === '키') updates.push({ range: `${colLetter(c+1)}${r+1}`, val: dietData.height });
+          if (val === '체중') updates.push({ range: `${colLetter(c+1)}${r+1}`, val: dietData.weight });
+          if (val === '기초대사량') updates.push({ range: `${colLetter(c+1)}${r+1}`, val: dietData.bmr });
+          if (val === '활동대사량') updates.push({ range: `${colLetter(c+1)}${r+1}`, val: dietData.tdee });
+          if (val === '벌크업 칼로리') updates.push({ range: `${colLetter(c+1)}${r+1}`, val: dietData.bulkKcal });
+
+          if (val.includes('탄수화물')) {
+            updates.push({ range: `${colLetter(c+1)}${r+1}`, val: dietData.carbG });
+            updates.push({ range: `${colLetter(c+2)}${r+1}`, val: dietData.carbKcal });
+          }
+          if (val.includes('단백질')) {
+            updates.push({ range: `${colLetter(c+1)}${r+1}`, val: dietData.protG });
+            updates.push({ range: `${colLetter(c+2)}${r+1}`, val: dietData.protKcal });
+          }
+          if (val.includes('지방')) {
+            updates.push({ range: `${colLetter(c+1)}${r+1}`, val: dietData.fatG });
+            updates.push({ range: `${colLetter(c+2)}${r+1}`, val: dietData.fatKcal });
+          }
+        }
+      }
+
+      // 배치 업데이트 실행
+      const dataPayload = updates.map(u => ({
+        range: `${sheetName}!${u.range}`,
+        values: [[u.val]]
+      }));
+
+      const batchRes = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${userSpreadsheetId}/values:batchUpdate`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${gAccessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            valueInputOption: 'USER_ENTERED',
+            data: dataPayload
+          })
+        }
+      );
+
+      if (batchRes.ok) {
+        badge.innerHTML = '<span style="color:var(--success);">☁️ 칼로리 & 탄단지 시트 동기화 완료!</span>';
+        setTimeout(() => {
+          badge.innerHTML = '<span style="color:var(--success);">☁️️ 내 구글 시트 실시간 연동됨</span>';
+        }, 2000);
+        alert('🎉 칼로리 및 탄단지 영양 플랜이 구글 시트에 즉시 반영되었습니다!');
+      } else {
+        throw new Error('배치 저장 실패');
+      }
+
+    } catch (err) {
+      badge.innerHTML = `<span style="color:var(--danger);">⚠️ 칼로리 시트 저장 실패: ${err.message}</span>`;
+    }
+  }
+
+  // 4-3. 1RM 값 시트에 저장 (중량/과부하/칼로리 차트 시트)
+  async function sync1RMToGoogleSheet(rms) {
+    if (!checkAuthOrAlert()) return;
+
+    const badge = document.getElementById('sync-status-badge');
+    badge.innerHTML = '<span style="color:var(--warning);">🔄 1RM 중량 시트로 저장 중...</span>';
+
+    try {
+      const sheetName = "중량/과부하/칼로리 차트";
+      const getRes = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${userSpreadsheetId}/values/${encodeURIComponent(sheetName)}!A1:Z35`,
+        { headers: { 'Authorization': `Bearer ${gAccessToken}` } }
+      );
+      const sheetData = await getRes.json();
+      const rows = sheetData.values || [];
+
+      const updates = [];
+      for (let r = 0; r < rows.length; r++) {
+        for (let c = 0; c < (rows[r] || []).length; c++) {
+          const val = String(rows[r][c] || '').replace(/\s+/g, "");
+
+          // "탑세트 종목 1RM 입력" 아래의 종목별 중량 행 찾기
+          if (val.includes("인클라인") && (val.includes("벤치프레스") || val.includes("벤치"))) {
+            if (r + 2 < rows.length) updates.push({ range: `${colLetter(c)}${r + 3}`, val: rms.bench });
+          }
+          if (val === "바벨로우") {
+            if (r + 2 < rows.length) updates.push({ range: `${colLetter(c)}${r + 3}`, val: rms.row });
+          }
+          if (val === "바벨스쿼트" || val === "스쿼트") {
+            if (r + 2 < rows.length) updates.push({ range: `${colLetter(c)}${r + 3}`, val: rms.squat });
+          }
+        }
+      }
+
+      const dataPayload = updates.map(u => ({
+        range: `${sheetName}!${u.range}`,
+        values: [[u.val]]
+      }));
+
+      const batchRes = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${userSpreadsheetId}/values:batchUpdate`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${gAccessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            valueInputOption: 'USER_ENTERED',
+            data: dataPayload
+          })
+        }
+      );
+
+      if (batchRes.ok) {
+        badge.innerHTML = '<span style="color:var(--success);">☁️ 1RM 중량 시트 동기화 완료!</span>';
+        setTimeout(() => {
+          badge.innerHTML = '<span style="color:var(--success);">☁️ 내 구글 시트 실시간 연동됨</span>';
+        }, 2000);
+        alert('🎉 1RM 중량이 구글 시트에 성공적으로 동기화되었습니다!');
+      } else {
+        throw new Error('1RM 저장 실패');
+      }
+
+    } catch (err) {
+      badge.innerHTML = `<span style="color:var(--danger);">⚠️ 1RM 시트 저장 실패: ${err.message}</span>`;
+    }
+  }
+
+  // 4-4. 현재 화면에 표시된 당일 일차 전체를 시트로 한 번에 수동 전송
+  async function syncCurrentDayToSheetManually() {
+    if (!checkAuthOrAlert()) return;
+
+    const stage = document.getElementById('stage-select').value;
+    const selectedDay = document.getElementById('day-select').value;
+    const cfg = STAGE_CONFIG[stage] || STAGE_CONFIG["1"];
+    const template = cfg.isDeload ? DELOAD_TEMPLATE : ROUTINE_TEMPLATE;
+    const d = template.find(item => item.dayId === selectedDay);
+
+    if (!d || d.isRest) {
+      alert('휴식일은 기록할 운동 내용이 없습니다.');
+      return;
+    }
+
+    const badge = document.getElementById('sync-status-badge');
+    badge.innerHTML = `<span style="color:var(--warning);">🔄 [${selectedDay}] 전체 운동 시트 전송 중...</span>`;
+
+    for (let ex of d.exercises) {
+      const setsData = [];
+      for (let s = 1; s <= ex.sets; s++) {
+        const wVal = document.getElementById(`inp_${stage}_${d.dayId}_${ex.id}_s${s}_w`)?.value;
+        const rVal = document.getElementById(`inp_${stage}_${d.dayId}_${ex.id}_s${s}_r`)?.value;
+        if (wVal !== undefined && rVal !== undefined) {
+          setsData.push({ set: s, weight: wVal, reps: rVal });
+        }
+      }
+      await syncWorkoutToGoogleSheets(stage, d.dayId, ex.name, setsData);
+    }
+    alert(`🎉 [${stage}단계 ${selectedDay}] 운동 기록이 내 시트로 모두 전송되었습니다!`);
+  }
+
+  function colLetter(colIndex) {
+    let temp, letter = '';
+    let col = colIndex + 1;
+    while (col > 0) {
+      temp = (col - 1) % 26;
+      letter = String.fromCharCode(temp + 65) + letter;
+      col = (col - temp - 1) / 26;
+    }
+    return letter;
+  }
+
+  // 1RM 저장 및 동기화
+  function saveAndRefresh(syncToSheet = false) {
+    const rms = get1RM();
+    localStorage.setItem('bulk_rm_bench', rms.bench);
+    localStorage.setItem('bulk_rm_row', rms.row);
+    localStorage.setItem('bulk_rm_squat', rms.squat);
+    updateTopSetSummary();
+    renderWorkout();
+
+    if (syncToSheet && userSpreadsheetId) {
+      sync1RMToGoogleSheet(rms);
+    }
+  }
+
+  // 칼로리 계산 및 동기화
+  function calcDiet(syncToSheet = false) {
+    const gender = document.getElementById('gender').value;
+    const age = parseFloat(document.getElementById('age').value);
+    const h = parseFloat(document.getElementById('height').value);
+    const w = parseFloat(document.getElementById('weight').value);
+    const act = parseFloat(document.getElementById('activity').value);
+
+    let bmr = (gender === '남성') 
+      ? 66.5 + (13.75 * w) + (5.003 * h) - (6.75 * age)
+      : 655.1 + (9.563 * w) + (1.850 * h) - (4.676 * age);
+    bmr = Math.round(bmr);
+
+    const tdee = Math.round(bmr * act);
+    const bulk = Math.round(tdee * 1.2);
+
+    const protG = Math.round(w * 1.8);
+    const protKcal = protG * 4;
+    
+    const fatKcal = Math.round(bulk * 0.17);
+    const fatG = Math.round(fatKcal / 9);
+
+    const carbKcal = bulk - protKcal - fatKcal;
+    const carbG = Math.round(carbKcal / 4);
+
+    document.getElementById('bmr-val').innerText = bmr.toLocaleString() + ' kcal';
+    document.getElementById('tdee-val').innerText = tdee.toLocaleString() + ' kcal';
+    document.getElementById('bulk-val').innerText = bulk.toLocaleString() + ' kcal';
+
+    document.getElementById('carb-g').innerText = carbG + 'g';
+    document.getElementById('carb-k').innerText = carbKcal.toLocaleString() + ' kcal';
+    document.getElementById('carb-p').innerText = Math.round((carbKcal / bulk) * 100) + '%';
+
+    document.getElementById('prot-g').innerText = protG + 'g';
+    document.getElementById('prot-k').innerText = protKcal.toLocaleString() + ' kcal';
+    document.getElementById('prot-p').innerText = Math.round((protKcal / bulk) * 100) + '%';
+
+    document.getElementById('fat-g').innerText = fatG + 'g';
+    document.getElementById('fat-k').innerText = fatKcal.toLocaleString() + ' kcal';
+    document.getElementById('fat-p').innerText = Math.round((fatKcal / bulk) * 100) + '%';
+
+    if (syncToSheet && userSpreadsheetId) {
+      syncDietToGoogleSheet({
+        gender, age, height: h, weight: w,
+        bmr, tdee, bulkKcal: bulk,
+        carbG, carbKcal, protG, protKcal, fatG, fatKcal
+      });
     }
   }
 
@@ -972,15 +1270,6 @@ async function createTemplateCopyInUserDrive() {
   }
 
   function onStageChange() {
-    updateTopSetSummary();
-    renderWorkout();
-  }
-
-  function saveAndRefresh() {
-    const rms = get1RM();
-    localStorage.setItem('bulk_rm_bench', rms.bench);
-    localStorage.setItem('bulk_rm_row', rms.row);
-    localStorage.setItem('bulk_rm_squat', rms.squat);
     updateTopSetSummary();
     renderWorkout();
   }
@@ -1183,52 +1472,10 @@ async function createTemplateCopyInUserDrive() {
     `;
   }
 
-  function applyEpleyToBench(v) { document.getElementById('rm-bench').value = v; saveAndRefresh(); }
-  function applyEpleyToRow(v) { document.getElementById('rm-row').value = v; saveAndRefresh(); }
-  function applyEpleyToSquat(v) { document.getElementById('rm-squat').value = v; saveAndRefresh(); }
+  function applyEpleyToBench(v) { document.getElementById('rm-bench').value = v; saveAndRefresh(true); }
+  function applyEpleyToRow(v) { document.getElementById('rm-row').value = v; saveAndRefresh(true); }
+  function applyEpleyToSquat(v) { document.getElementById('rm-squat').value = v; saveAndRefresh(true); }
 
-  function calcDiet() {
-    const gender = document.getElementById('gender').value;
-    const age = parseFloat(document.getElementById('age').value);
-    const h = parseFloat(document.getElementById('height').value);
-    const w = parseFloat(document.getElementById('weight').value);
-    const act = parseFloat(document.getElementById('activity').value);
-
-    let bmr = (gender === 'm') 
-      ? 66.5 + (13.75 * w) + (5.003 * h) - (6.75 * age)
-      : 655.1 + (9.563 * w) + (1.850 * h) - (4.676 * age);
-    bmr = Math.round(bmr);
-
-    const tdee = Math.round(bmr * act);
-    const bulk = Math.round(tdee * 1.2);
-
-    const protG = Math.round(w * 1.8);
-    const protKcal = protG * 4;
-    
-    const fatKcal = Math.round(bulk * 0.17);
-    const fatG = Math.round(fatKcal / 9);
-
-    const carbKcal = bulk - protKcal - fatKcal;
-    const carbG = Math.round(carbKcal / 4);
-
-    document.getElementById('bmr-val').innerText = bmr.toLocaleString() + ' kcal';
-    document.getElementById('tdee-val').innerText = tdee.toLocaleString() + ' kcal';
-    document.getElementById('bulk-val').innerText = bulk.toLocaleString() + ' kcal';
-
-    document.getElementById('carb-g').innerText = carbG + 'g';
-    document.getElementById('carb-k').innerText = carbKcal.toLocaleString() + ' kcal';
-    document.getElementById('carb-p').innerText = Math.round((carbKcal / bulk) * 100) + '%';
-
-    document.getElementById('prot-g').innerText = protG + 'g';
-    document.getElementById('prot-k').innerText = protKcal.toLocaleString() + ' kcal';
-    document.getElementById('prot-p').innerText = Math.round((protKcal / bulk) * 100) + '%';
-
-    document.getElementById('fat-g').innerText = fatG + 'g';
-    document.getElementById('fat-k').innerText = fatKcal.toLocaleString() + ' kcal';
-    document.getElementById('fat-p').innerText = Math.round((fatKcal / bulk) * 100) + '%';
-  }
-
-  // 초기화 및 복원
   window.onload = function() {
     if (localStorage.getItem('bulk_rm_bench')) document.getElementById('rm-bench').value = localStorage.getItem('bulk_rm_bench');
     if (localStorage.getItem('bulk_rm_row')) document.getElementById('rm-row').value = localStorage.getItem('bulk_rm_row');
@@ -1240,9 +1487,8 @@ async function createTemplateCopyInUserDrive() {
 
     updateTopSetSummary();
     renderWorkout();
-    calcDiet();
+    calcDiet(false);
 
-    // 구글 스크립트 로드 대기 후 초기화
     setTimeout(initGoogleAuth, 800);
   };
 </script>
