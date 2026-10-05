@@ -454,7 +454,7 @@
     if (!window.google) return;
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets',
+      scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/spreadsheets',
       callback: async (resp) => {
         if (resp.error) {
           alert('구글 로그인 실패: ' + resp.error);
@@ -485,37 +485,38 @@
 
   // 사용자의 구글 드라이브에 원본 시트 자동 복사 생성
 // 사용자의 구글 드라이브에 원본 시트 사본 생성 및 연동
-  function createTemplateCopyInUserDrive() {
-    const badge = document.getElementById('sync-status-badge');
-    badge.innerHTML = '<span style="color:var(--warning);">📂 새 탭에서 사본 생성 진행 중...</span>';
+async function createTemplateCopyInUserDrive() {
+  const badge = document.getElementById('sync-status-badge');
+  badge.innerHTML = '<span style="color:var(--warning);">📂 내 드라이브에 시트 자동 생성 중...</span>';
 
-    // 1. 구글 공식 사본 만들기 페이지를 새 탭으로 띄움
-    const copyUrl = `https://docs.google.com/spreadsheets/d/${TEMPLATE_SHEET_ID}/copy`;
-    window.open(copyUrl, '_blank');
+  try {
+    // 1. Google Drive API로 원본 시트를 내 드라이브에 백그라운드 복제
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files/${TEMPLATE_SHEET_ID}/copy`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${gAccessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        name: '🏋🏻‍♂️ 벌크업의 정석 (내 운동 일지)'
+      })
+    });
 
-    // 2. 사본 생성 후 주소 입력받아 시트 ID 추출
-    setTimeout(() => {
-      const userUrl = prompt(
-        "1) 열린 새 탭에서 [사본 만들기]를 누르세요.\n" +
-        "2) 만들어진 내 스프레드시트의 주소창(URL)을 복사해 여기에 붙여넣어 주세요:"
-      );
-
-      if (userUrl) {
-        // 주소에서 시트 고유 ID(/d/ 뒤의 문자열) 자동 추출
-        const match = userUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
-        if (match && match[1]) {
-          userSpreadsheetId = match[1];
-          localStorage.setItem('bulk_user_sheet_id', userSpreadsheetId);
-          showConnectedState(userSpreadsheetId);
-          alert('🎉 내 구글 시트 연동이 완료되었습니다!\n이제 입력하는 운동 기록이 내 시트로 실시간 저장됩니다.');
-        } else {
-          badge.innerHTML = '<span style="color:var(--danger);">⚠️ 올바른 스프레드시트 URL이 아닙니다.</span>';
-        }
-      } else {
-        badge.innerHTML = '<span style="color:var(--subtext);">☁️ 시트 연동 취소됨 (로컬 저장 모드)</span>';
-      }
-    }, 500);
+    const data = await res.json();
+    
+    // 2. 생성된 시트 ID를 자동으로 추출해 브라우저에 저장하고 연동 완료
+    if (data.id) {
+      userSpreadsheetId = data.id;
+      localStorage.setItem('bulk_user_sheet_id', data.id);
+      showConnectedState(data.id);
+      alert('🎉 내 구글 드라이브에 시트가 자동 생성되었습니다!\n지금부터 운동 기록이 내 시트로 실시간 저장됩니다.');
+    } else {
+      throw new Error(data.error?.message || '시트 복사 실패');
+    }
+  } catch (err) {
+    badge.innerHTML = `<span style="color:var(--danger);">⚠️ 시트 생성 실패: ${err.message}</span>`;
   }
+}
 
   function showConnectedState(sheetId) {
     document.getElementById('sync-status-badge').innerHTML = '<span style="color:var(--success);">☁️ 내 구글 시트 실시간 연동됨</span>';
