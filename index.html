@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>벌크업의 정석 트레이닝 & 칼로리 매니저</title>
+  <!-- 구글 공식 로그인/인증 라이브러리 (Google Identity Services) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-header: #273549;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+      --text: #f8fafc;
+      --subtext: #94a3b8;
+      --border: #334155;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --input-bg: #0b1120;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 14px; line-height: 1.5; }
+    .container { max-width: 1040px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    header h1 { font-size: 1.7rem; color: var(--accent); margin-bottom: 4px; }
+    header p { color: var(--subtext); font-size: 0.9rem; }
+
+    .nav-tabs { display: flex; gap: 8px; margin-bottom: 18px; overflow-x: auto; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .tab-btn { background: transparent; border: 1px solid transparent; color: var(--subtext); padding: 10px 16px; border-radius: 8px; cursor: pointer; font-size: 0.95rem; font-weight: 600; white-space: nowrap; transition: 0.2s; }
+    .tab-btn.active { background: var(--card-bg); color: var(--accent); border-color: var(--border); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; margin-bottom: 18px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); }
+    .card-title-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; }
+    .card h2 { font-size: 1.2rem; color: var(--text); }
+
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+
+    .form-group { margin-bottom: 10px; }
+    label { display: block; font-size: 0.82rem; color: var(--subtext); margin-bottom: 4px; }
+    input, select { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--input-bg); color: #fff; font-size: 0.9rem; }
+    input:focus, select:focus { outline: none; border-color: var(--accent); }
+    button.calc-btn { width: 100%; padding: 11px; border-radius: 8px; border: none; background: var(--accent); color: #0f172a; font-weight: bold; cursor: pointer; font-size: 0.95rem; transition: 0.2s; }
+    button.calc-btn:hover { background: var(--accent-hover); }
+
+    .badge-topset { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+    .badge-warmup { background: rgba(56, 189, 248, 0.2); color: var(--accent); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .badge-drop { background: rgba(239, 68, 68, 0.2); color: var(--danger); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .badge-tempo { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid var(--success); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
+
+    /* 구글 로그인 & 시트 자동 연동 바 */
+    .sheet-sync-bar {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .sync-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn-google {
+      background: #ffffff;
+      color: #1f2937;
+      border: 1px solid #d1d5db;
+      padding: 9px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: 0.2s;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+    .btn-google:hover { background: #f3f4f6; }
+    .sync-status {
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+    }
+
+    /* 일자별 컨테이너 */
+    .day-card { background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+    .day-header { background: var(--card-header); padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px; }
+    .day-header-left { display: flex; align-items: center; gap: 10px; }
+    .day-header-left h3 { font-size: 1.05rem; color: var(--accent); display: flex; align-items: center; gap: 6px; }
+    .day-header-right { display: flex; align-items: center; gap: 12px; }
+    .day-vol { font-size: 0.85rem; color: var(--subtext); }
+    .day-vol strong { color: var(--success); font-size: 1rem; }
+
+    .btn-photo { background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: 0.2s; }
+    .btn-photo:hover { background: #2563eb; }
+
+    /* 운동 세트 테이블 */
+    .ex-box { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .ex-box:last-child { border-bottom: none; }
+    .ex-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+    .ex-name { font-size: 0.98rem; font-weight: 600; color: #fff; }
+    .ex-meta { font-size: 0.8rem; color: var(--subtext); }
+
+    .set-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    .set-table th { background: rgba(0,0,0,0.3); color: var(--subtext); font-size: 0.78rem; padding: 6px 8px; text-align: center; border: 1px solid var(--border); }
+    .set-table td { border: 1px solid var(--border); padding: 6px 8px; text-align: center; }
+    .set-table input { width: 66px; padding: 6px 4px; text-align: center; font-size: 0.88rem; border-radius: 4px; border: 1px solid #475569; }
+    .set-table input.topset-input { border-color: var(--warning); background: rgba(245, 158, 11, 0.15); color: #fde047; font-weight: bold; }
+    .set-vol { font-size: 0.85rem; color: var(--subtext); font-weight: 500; }
+
+    .topset-badge-inline { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--warning); background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); padding: 2px 6px; border-radius: 4px; }
+
+    .guide-box { background: rgba(56, 189, 248, 0.08); border-left: 4px solid var(--accent); padding: 12px 14px; border-radius: 4px; margin-bottom: 14px; font-size: 0.88rem; line-height: 1.5; }
+    .deload-box { background: rgba(34, 197, 94, 0.08); border-left: 4px solid var(--success); padding: 12px 14px; border-radius: 4px; margin-bottom: 14px; font-size: 0.88rem; line-height: 1.5; }
+
+    /* 모달 팝업 */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; justify-content: center; align-items: center; padding: 16px; }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; }
+    .modal-title { font-size: 1.15rem; color: var(--accent); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .modal-img-wrapper { margin: 12px 0; background: #0b1120; border-radius: 8px; padding: 8px; border: 1px solid var(--border); }
+    .modal-img-wrapper img { width: 100%; height: auto; border-radius: 6px; display: block; }
+    .modal-actions { display: flex; gap: 10px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+    .btn-download { background: var(--success); color: #0b1120; border: none; padding: 10px 18px; border-radius: 6px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-close { background: #475569; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>🏋🏻‍♂️ 벌크업의 정석 트레이닝 센터</h1>
+    <p>1RM 탑세트 자동 연동 & 구글 스프레드시트 실시간 동기화</p>
+  </header>
+
+  <!-- 🔗 구글 로그인 및 내 드라이브 시트 자동 생성/동기화 바 -->
+  <div class="sheet-sync-bar">
+    <div class="sync-left">
+      <button id="btn-google-login" class="btn-google" onclick="handleGoogleAuthClick()">
+        <svg width="18" height="18" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.15z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.27 21.36 7.35 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.98 0 12s.46 3.84 1.26 5.42l4.02-3.15z"/>
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.27 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+        </svg>
+        <span id="btn-google-text">Google 로그인으로 내 시트 자동 생성</span>
+      </button>
+
+      <span id="sheet-link-wrapper" style="display:none;">
+        <a id="user-sheet-link" href="#" target="_blank" style="color:var(--accent); font-size:0.85rem; text-decoration:none; font-weight:600;">
+          📄 내 스프레드시트 열기 ↗
+        </a>
+      </span>
+    </div>
+
+    <div class="sync-status" id="sync-status-badge">
+      <span style="color:var(--subtext);">☁️ 시트 미연동 (로컬 브라우저 저장 모드)</span>
+    </div>
+  </div>
+
+  <nav class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('tab-workout')">💪 단계별 루틴 & 기록표</button>
+    <button class="tab-btn" onclick="switchTab('tab-1rm')">⌨️ 1RM & 탑세트 중량 설정</button>
+    <button class="tab-btn" onclick="switchTab('tab-diet')">🍚 칼로리 & 탄단지 계산기</button>
+    <button class="tab-btn" onclick="switchTab('tab-guide')">📖 프로그램 주기화 가이드</button>
+  </nav>
+
+  <!-- TAB 1: WORKOUT & RECORD -->
+  <section id="tab-workout" class="tab-content active">
+    <div class="card">
+      <div class="card-title-bar">
+        <h2><span>훈련 단계 & 일수 선택</span></h2>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <select id="stage-select" style="width: auto; min-width: 175px; font-weight: bold; color: var(--accent);" onchange="onStageChange()">
+            <option value="1">1단계 (65% / 12~15회)</option>
+            <option value="2">2단계 (70% / 8~11회)</option>
+            <option value="3">3단계 (80% / 6~8회)</option>
+            <option value="4">4단계 (90% / 3~5회)</option>
+            <option value="4.5">4.5단계 (디로딩 템포)</option>
+            <option value="5">5단계 (2주기 65% 과부하)</option>
+            <option value="6">6단계 (2주기 70% 과부하)</option>
+            <option value="7">7단계 (2주기 80% 과부하)</option>
+            <option value="8">8단계 (2주기 90% 과부하)</option>
+            <option value="8.5">8.5단계 (최종 디로딩)</option>
+          </select>
+
+          <select id="day-select" style="width: auto; min-width: 165px; font-weight: bold; color: #fde047;" onchange="renderWorkout()">
+            <option value="day1" selected>Day 1: 밀기 (가슴/어깨/삼두)</option>
+            <option value="day2">Day 2: 당기기 (등/이두/후면)</option>
+            <option value="day3">Day 3: 휴식 (Recovery)</option>
+            <option value="day4">Day 4: 하체 & 코어 (스쿼트)</option>
+            <option value="day5">Day 5: 밀기 (가슴/어깨/삼두)</option>
+            <option value="day6">Day 6: 휴식 (Recovery)</option>
+            <option value="day7">Day 7: 당기기 (등/이두/후면)</option>
+            <option value="day8">Day 8: 하체 & 코어 (스쿼트)</option>
+            <option value="day9">Day 9: 휴식 (Recovery)</option>
+          </select>
+
+          <button onclick="clearCurrentRecords()" style="background:#475569; color:#fff; border:none; padding:8px 12px; border-radius:6px; font-size:0.8rem; cursor:pointer;">기록 초기화</button>
+        </div>
+      </div>
+
+      <div id="stage-info"></div>
+
+      <!-- 1RM 현재 연동 상태 바 -->
+      <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px;">
+        <div>🎯 <strong>현재 단계 3세트 탑세트 연동 중량:</strong></div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <span>인클라인 벤치: <strong id="bar-bench-w" style="color:var(--warning);">46.0 kg</strong></span>
+          <span>바벨로우: <strong id="bar-row-w" style="color:var(--warning);">39.0 kg</strong></span>
+          <span>바벨 스쿼트: <strong id="bar-squat-w" style="color:var(--warning);">97.5 kg</strong></span>
+        </div>
+      </div>
+
+      <div id="workout-container"></div>
+    </div>
+  </section>
+
+  <!-- TAB 2: 1RM SETTING -->
+  <section id="tab-1rm" class="tab-content">
+    <div class="card">
+      <div class="card-title-bar">
+        <h2>메인 3종목 1RM 설정 (탑세트 연동의 기준)</h2>
+      </div>
+      <div class="grid-3">
+        <div class="form-group">
+          <label>인클라인 벤치프레스 1RM (kg)</label>
+          <input type="number" id="rm-bench" value="71" step="0.5" oninput="saveAndRefresh()">
+        </div>
+        <div class="form-group">
+          <label>바벨로우 1RM (kg)</label>
+          <input type="number" id="rm-row" value="60" step="0.5" oninput="saveAndRefresh()">
+        </div>
+        <div class="form-group">
+          <label>바벨 스쿼트 1RM (kg)</label>
+          <input type="number" id="rm-squat" value="150" step="0.5" oninput="saveAndRefresh()">
+        </div>
+      </div>
+      <p style="font-size: 0.82rem; color: var(--subtext); margin-top: 6px;">
+        * 여기서 1RM을 수정하면 루틴표 내 모든 메인 종목 <strong>탑세트(3세트째)의 중량이 단계별 비율에 맞춰 자동 재계산</strong>되어 연동됩니다.
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title-bar">
+        <h2>주기화 단계별 메인 종목 탑세트 중량 요약</h2>
+      </div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+        <thead>
+          <tr style="background: rgba(0,0,0,0.3); color: var(--subtext);">
+            <th style="padding: 10px; border: 1px solid var(--border);">단계</th>
+            <th style="padding: 10px; border: 1px solid var(--border);">강도(%)</th>
+            <th style="padding: 10px; border: 1px solid var(--border);">목표 반복수</th>
+            <th style="padding: 10px; border: 1px solid var(--border);">인클라인 벤치</th>
+            <th style="padding: 10px; border: 1px solid var(--border);">바벨로우</th>
+            <th style="padding: 10px; border: 1px solid var(--border);">바벨 스쿼트</th>
+          </tr>
+        </thead>
+        <tbody id="topset-summary-tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title-bar">
+        <h2>중량 × 횟수 기반 1RM 역산기 (Epley 공식)</h2>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>수행 중량 (kg)</label>
+          <input type="number" id="epley-w" value="90">
+        </div>
+        <div class="form-group">
+          <label>성공 반복수 (회)</label>
+          <input type="number" id="epley-r" value="5">
+        </div>
+      </div>
+      <button class="calc-btn" style="background: var(--warning); margin-top: 6px;" onclick="calcEpley()">1RM 계산하기</button>
+      <div id="epley-res" style="margin-top: 10px; font-weight: bold; color: var(--accent);"></div>
+    </div>
+  </section>
+
+  <!-- TAB 3: CALORIE & DIET -->
+  <section id="tab-diet" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title-bar"><h2>신체 스펙 입력</h2></div>
+        <div class="form-group">
+          <label>성별</label>
+          <select id="gender"><option value="m">남성</option><option value="f">여성</option></select>
+        </div>
+        <div class="form-group">
+          <label>나이 (세)</label>
+          <input type="number" id="age" value="24">
+        </div>
+        <div class="form-group">
+          <label>신장 (cm)</label>
+          <input type="number" id="height" value="173">
+        </div>
+        <div class="form-group">
+          <label>체중 (kg)</label>
+          <input type="number" id="weight" value="72">
+        </div>
+        <div class="form-group">
+          <label>활동량</label>
+          <select id="activity">
+            <option value="1.2">비활동적 (거의 운동 안 함)</option>
+            <option value="1.375">가벼운 활동 (주 1~3회)</option>
+            <option value="1.55" selected>보통 활동 (주 3~5회 운동 - 시트 기준)</option>
+            <option value="1.725">매우 활동적 (주 6~7회)</option>
+          </select>
+        </div>
+        <button class="calc-btn" onclick="calcDiet()">칼로리 & 영양 비율 재계산</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title-bar"><h2>벌크업 영양 섭취 목표</h2></div>
+        <div class="grid-2" style="margin-bottom: 12px;">
+          <div style="background: var(--input-bg); border: 1px solid var(--border); padding: 12px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.8rem; color: var(--subtext);">기초대사량 (BMR)</div>
+            <div id="bmr-val" style="font-size: 1.3rem; font-weight: bold; color: var(--text); margin-top: 4px;">1,747 kcal</div>
+          </div>
+          <div style="background: var(--input-bg); border: 1px solid var(--border); padding: 12px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 0.8rem; color: var(--subtext);">유지 칼로리 (TDEE)</div>
+            <div id="tdee-val" style="font-size: 1.3rem; font-weight: bold; color: var(--text); margin-top: 4px;">2,708 kcal</div>
+          </div>
+        </div>
+        <div style="background: var(--input-bg); border: 1px solid var(--accent); padding: 12px; border-radius: 8px; text-align: center; margin-bottom: 14px;">
+          <div style="font-size: 0.85rem; color: var(--accent);">벌크업 목표 칼로리 (+20% 잉여)</div>
+          <div id="bulk-val" style="font-size: 1.6rem; font-weight: bold; color: var(--accent); margin-top: 4px;">3,249 kcal</div>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem;">
+          <thead>
+            <tr style="background: rgba(0,0,0,0.3); color: var(--subtext);">
+              <th style="padding: 8px; border: 1px solid var(--border);">영양소</th>
+              <th style="padding: 8px; border: 1px solid var(--border);">섭취량(g)</th>
+              <th style="padding: 8px; border: 1px solid var(--border);">열량(kcal)</th>
+              <th style="padding: 8px; border: 1px solid var(--border);">칼로리 비</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 8px; border: 1px solid var(--border);">🍚 탄수화물</td>
+              <td id="carb-g" style="padding: 8px; border: 1px solid var(--border); font-weight: bold;">546g</td>
+              <td id="carb-k" style="padding: 8px; border: 1px solid var(--border);">2,185 kcal</td>
+              <td id="carb-p" style="padding: 8px; border: 1px solid var(--border);">67%</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid var(--border);">🥩 단백질</td>
+              <td id="prot-g" style="padding: 8px; border: 1px solid var(--border); font-weight: bold;">130g</td>
+              <td id="prot-k" style="padding: 8px; border: 1px solid var(--border);">518 kcal</td>
+              <td id="prot-p" style="padding: 8px; border: 1px solid var(--border);">16%</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid var(--border);">🥑 지방</td>
+              <td id="fat-g" style="padding: 8px; border: 1px solid var(--border); font-weight: bold;">61g</td>
+              <td id="fat-k" style="padding: 8px; border: 1px solid var(--border);">546 kcal</td>
+              <td id="fat-p" style="padding: 8px; border: 1px solid var(--border);">17%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB 4: GUIDE -->
+  <section id="tab-guide" class="tab-content">
+    <div class="card">
+      <div class="card-title-bar"><h2>📖 벌크업의 정석 핵심 트레이닝 법칙</h2></div>
+      <div class="guide-box">
+        <strong>1. 3세트 탑세트(Top-Set) 실행법</strong><br>
+        메인 종목(인클라인 벤치, 바벨로우, 스쿼트)은 <strong>총 4세트</strong>로 진행됩니다.<br>
+        • 1~2세트: 웜업 및 중량 적응 세트 (가벼운 무게로 점진적 빌드업)<br>
+        • <strong>3번째 세트 (탑세트)</strong>: 1RM 연동 중량을 장착하고 당일 목표 횟수를 실패 직전까지 완수!<br>
+        • 4세트: 백오프 세트 (중량을 10~15% 낮추고 반복 수행)
+      </div>
+      <div class="guide-box">
+        <strong>2. RIR (Repetitions In Reserve) 피로도 관리</strong><br>
+        • <strong>RIR 0</strong>: 남은 힘 없이 한계까지 쥐어짜는 세트 (탑세트에서 사용)<br>
+        • <strong>RIR 2.5 ~ 3</strong>: 2~3회 더 들 수 있는 여유를 두고 정지하여 신경계 피로를 조절<br>
+        • <strong>RIR 5</strong>: 부상 방지를 위한 워밍업 상태
+      </div>
+      <div class="deload-box">
+        <strong>3. 디로딩(Deloading) 템포 3-1-2 법칙 (4.5단계 / 8.5단계)</strong><br>
+        4단계 고중량 피로를 털어내고 관절을 회복시키는 1주일입니다.<br>
+        • <strong>50% 1RM 중량</strong>으로 수행하며 RIR 4(충분한 여유) 유지<br>
+        • <strong>3초 이완(신장성) ➔ 1초 홀드(정지) ➔ 2초 수축(단축성)</strong>으로 근육 텐션만 자극
+      </div>
+      <div class="guide-box">
+        <strong>4. 1주기 vs 2주기 점진적 과부하 검증 원리</strong><br>
+        • 1단계 ➔ 5단계 (65% 강도 동일)<br>
+        • 2단계 ➔ 6단계 (70% 강도 동일)<br>
+        • 3단계 ➔ 7단계 (80% 강도 동일)<br>
+        • 4단계 ➔ 8단계 (90% 강도 동일)<br>
+        2주기에 들어섰을 때 같은 강도에서 <strong>반복 횟수가 늘었거나 총 볼륨이 증가</strong>했는지 검증하여 벌크업 성과를 확인합니다.
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- 사진 출력 모달 -->
+<div id="imageModal" class="modal-overlay" onclick="closeImageModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-title">
+      <span id="modal-heading">📸 오늘의 운동 기록 카드</span>
+      <button onclick="closeImageModal()" style="background:none; border:none; color:var(--subtext); font-size:1.5rem; cursor:pointer;">&times;</button>
+    </div>
+    <p style="font-size:0.82rem; color:var(--subtext); margin-bottom:8px;">모바일 환경에서는 이미지를 <strong>길게 눌러서 사진첩에 저장</strong>할 수 있습니다.</p>
+    <div class="modal-img-wrapper">
+      <img id="generatedImg" src="" alt="운동 기록 카드">
+    </div>
+    <div class="modal-actions">
+      <a id="downloadLink" class="btn-download" download="workout_record.png" href="#">📥 사진 다운로드 (PNG)</a>
+      <button class="btn-close" onclick="closeImageModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ========================================================
+  // 🔑 1. 구글 OAuth 클라이언트 ID 설정
+  // ========================================================
+  // ⬇️ 아래 따옴표 안에 발급받으신 클라이언트 ID를 붙여넣으세요!
+  const GOOGLE_CLIENT_ID = "368195400293-1h2mkirlqjlgi3ue480t44rirkolrgeh.apps.googleusercontent.com";
+
+  // 복사할 원본 템플릿 스프레드시트 ID
+  const TEMPLATE_SHEET_ID = "19dDY5KEl_JSqSLIjdjMdqW-APnoxub1kkGRV1_GzY14";
+
+  let tokenClient = null;
+  let gAccessToken = null;
+  let userSpreadsheetId = localStorage.getItem('bulk_user_sheet_id');
+
+  // ========================================================
+  // 2. 구글 OAuth 로그인 및 드라이브 시트 자동 복제 로직
+  // ========================================================
+  function initGoogleAuth() {
+    if (!window.google) return;
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets',
+      callback: async (resp) => {
+        if (resp.error) {
+          alert('구글 로그인 실패: ' + resp.error);
+          return;
+        }
+        gAccessToken = resp.access_token;
+        document.getElementById('sync-status-badge').innerHTML = '<span style="color:var(--warning);">🔄 내 구글 드라이브 시트 확인 중...</span>';
+
+        if (!userSpreadsheetId) {
+          await createTemplateCopyInUserDrive();
+        } else {
+          showConnectedState(userSpreadsheetId);
+        }
+      }
+    });
+  }
+
+  function handleGoogleAuthClick() {
+    if (GOOGLE_CLIENT_ID === "YOUR_CLIENT_ID.apps.googleusercontent.com") {
+      alert("⚠️ HTML 파일 상단의 GOOGLE_CLIENT_ID 변수에 발급받으신 클라이언트 ID를 먼저 입력해 주세요!");
+      return;
+    }
+    if (!tokenClient) {
+      initGoogleAuth();
+    }
+    tokenClient.requestAccessToken({ prompt: '' });
+  }
+
+  // 사용자의 구글 드라이브에 원본 시트 자동 복사 생성
+  async function createTemplateCopyInUserDrive() {
+    const badge = document.getElementById('sync-status-badge');
+    badge.innerHTML = '<span style="color:var(--warning);">📂 내 드라이브에 시트 자동 생성 중...</span>';
+
+    try {
+      const res = await fetch(`https://www.googleapis.com/drive/v3/files/${TEMPLATE_SHEET_ID}/copy`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${gAccessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: '🏋🏻‍♂️ 벌크업의 정석 (내 운동 일지)'
+        })
+      });
+
+      const data = await res.json();
+      if (data.id) {
+        userSpreadsheetId = data.id;
+        localStorage.setItem('bulk_user_sheet_id', data.id);
+        showConnectedState(data.id);
+        alert('🎉 내 구글 드라이브에 벌크업 시트가 자동 생성되었습니다!');
+      } else {
+        throw new Error(data.error?.message || '시트 복사 실패');
+      }
+    } catch (err) {
+      badge.innerHTML = `<span style="color:var(--danger);">⚠️ 시트 생성 실패: ${err.message}</span>`;
+    }
+  }
+
+  function showConnectedState(sheetId) {
+    document.getElementById('sync-status-badge').innerHTML = '<span style="color:var(--success);">☁️ 내 구글 시트 실시간 연동됨</span>';
+    document.getElementById('btn-google-text').innerText = '구글 계정 연동 완료';
+    const linkWrapper = document.getElementById('sheet-link-wrapper');
+    const link = document.getElementById('user-sheet-link');
+    link.href = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
+    linkWrapper.style.display = 'inline-block';
+  }
+
+  // ========================================================
+  // 3. 단계별 세부 파라미터 정의 (스프레드시트 100% 동기화)
+  // ========================================================
+  const STAGE_CONFIG = {
+    "1":   { pct: 0.65, topReps: "12~15회", topRIR: "RIR 0", subReps: "12~15회", subRIR: "RIR 3",   rest: "1분 30초", isDeload: false, desc: "근비대 기초 형성기 — 65% 중량으로 높은 반복수와 자극에 집중합니다." },
+    "2":   { pct: 0.70, topReps: "8~11회",  topRIR: "RIR 0", subReps: "8~11회",  subRIR: "RIR 2.5", rest: "2분",      isDeload: false, desc: "중중량 근비대 적응기 — 70% 중량으로 전환하며 세트 간 휴식을 2분으로 확보합니다." },
+    "3":   { pct: 0.80, topReps: "6~8회",   topRIR: "RIR 0", subReps: "6~8회",   subRIR: "RIR 2",   rest: "2분 30초", isDeload: false, desc: "스트렝스 전환기 — 80% 고중량으로 진입하며 집중력을 극대화합니다." },
+    "4":   { pct: 0.90, topReps: "3~5회",   topRIR: "RIR 0", subReps: "4~6회",   subRIR: "RIR 1",   rest: "3분",      isDeload: false, desc: "최대 근력 피킹 — 90% 한계 중량에 도전하는 최고 강도 구간입니다." },
+    "4.5": { pct: 0.50, topReps: "8~10회",  topRIR: "RIR 4", subReps: "8~10회",  subRIR: "RIR 4",   rest: "1분 30초", isDeload: true,  desc: "신경계 및 관절 회복 디로딩 — 50% 중량과 3초 이완 / 1초 정지 / 2초 수축 템포로 회복합니다." },
+    "5":   { pct: 0.65, topReps: "12~15회", topRIR: "RIR 0", subReps: "12~15회", subRIR: "RIR 3",   rest: "1분 30초", isDeload: false, desc: "2주기 과부하 검증 1 — 1단계와 비교하여 반복수 및 총 볼륨 증가를 확인합니다." },
+    "6":   { pct: 0.70, topReps: "8~11회",  topRIR: "RIR 0", subReps: "8~11회",  subRIR: "RIR 2.5", rest: "2분",      isDeload: false, desc: "2주기 과부하 검증 2 — 2단계 대비 중량 및 볼륨 증가를 확인합니다." },
+    "7":   { pct: 0.80, topReps: "6~8회",   topRIR: "RIR 0", subReps: "6~8회",   subRIR: "RIR 2",   rest: "2분 30초", isDeload: false, desc: "2주기 과부하 검증 3 — 3단계 대비 80% 스트렝스 성장을 확인합니다." },
+    "8":   { pct: 0.90, topReps: "3~5회",   topRIR: "RIR 0", subReps: "4~6회",   subRIR: "RIR 1",   rest: "3분",      isDeload: false, desc: "2주기 최고 중량 피킹 — 4단계 기록 경신을 목표로 합니다." },
+    "8.5": { pct: 0.50, topReps: "8~10회",  topRIR: "RIR 4", subReps: "8~10회",  subRIR: "RIR 4",   rest: "1분 30초", isDeload: true,  desc: "프로그램 완료 최종 디로딩 — 피로 누적 해소 및 컨디셔닝 회복." }
+  };
+
+  // 9일 주기 운동 루틴
+  const ROUTINE_TEMPLATE = [
+    {
+      dayId: "day1", dayTitle: "Day 1: 밀기 (가슴 / 삼두 / 어깨)",
+      exercises: [
+        { id: "p1_warm", name: "인클라인 덤벨 플라이", sets: 2, isMain: false, rest: "30초~1분", reps: "15~20회", rir: "RIR 5", type: "웜업" },
+        { id: "p1_main", name: "인클라인 벤치프레스", sets: 4, isMain: true, mainKey: "bench", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
+        { id: "p1_sub1", name: "체스트 프레스 머신", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p1_sub2", name: "체스트 플라이 머신", sets: 3, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p1_sub3", name: "트라이셉스 푸쉬다운", sets: 3, isMain: false, reps: "10~12회", rir: "RIR 1", rest: "1분", type: "드롭세트" },
+        { id: "p1_sub4", name: "머신 숄더 프레스", sets: 3, isMain: false, isDynamic: true, type: "본세트" }
+      ]
+    },
+    {
+      dayId: "day2", dayTitle: "Day 2: 당기기 (등 / 이두 / 후면삼각근)",
+      exercises: [
+        { id: "p2_warm", name: "케이블 암풀다운", sets: 4, isMain: false, rest: "1분", reps: "12~15회", rir: "RIR 3", type: "선피로" },
+        { id: "p2_main", name: "바벨로우", sets: 4, isMain: true, mainKey: "row", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
+        { id: "p2_sub1", name: "어시스트 풀업", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p2_sub2", name: "시티드 로우", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p2_sub3", name: "바벨 컬", sets: 3, isMain: false, reps: "10~12회", rir: "RIR 1", rest: "1분", type: "드롭세트" },
+        { id: "p2_sub4", name: "리어 델트 플라이", sets: 3, isMain: false, reps: "12~15회", rir: "RIR 0", rest: "1분", type: "후면" }
+      ]
+    },
+    { dayId: "day3", dayTitle: "Day 3: 휴식 (Recovery)", isRest: true },
+    {
+      dayId: "day4", dayTitle: "Day 4: 하체 & 코어 (스쿼트)",
+      exercises: [
+        { id: "p4_warm", name: "이너 타이 (내전근)", sets: 3, isMain: false, rest: "1분 30초", isDynamic: true, type: "활성화" },
+        { id: "p4_main", name: "바벨 스쿼트", sets: 4, isMain: true, mainKey: "squat", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
+        { id: "p4_sub1", name: "레그 프레스", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p4_sub2", name: "레그 컬", sets: 4, isMain: false, rest: "1분 30초", reps: "10~12회", rir: "RIR 2.5", type: "본세트" },
+        { id: "p4_sub3", name: "윗몸 일으키기", sets: 5, isMain: false, rest: "1분", reps: "최대 반복", rir: "실패지점", type: "코어" }
+      ]
+    },
+    {
+      dayId: "day5", dayTitle: "Day 5: 밀기 (가슴 / 삼두 / 어깨)",
+      exercises: [
+        { id: "p5_warm", name: "인클라인 덤벨 플라이", sets: 2, isMain: false, rest: "30초~1분", reps: "15~20회", rir: "RIR 5", type: "웜업" },
+        { id: "p5_main", name: "인클라인 벤치프레스", sets: 4, isMain: true, mainKey: "bench", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
+        { id: "p5_sub1", name: "체스트 프레스 머신", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p5_sub2", name: "체스트 플라이 머신", sets: 3, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p5_sub3", name: "트라이셉스 푸쉬다운", sets: 3, isMain: false, reps: "10~12회", rir: "RIR 1", rest: "1분", type: "드롭세트" },
+        { id: "p5_sub4", name: "머신 숄더 프레스", sets: 3, isMain: false, isDynamic: true, type: "본세트" }
+      ]
+    },
+    { dayId: "day6", dayTitle: "Day 6: 휴식 (Recovery)", isRest: true },
+    {
+      dayId: "day7", dayTitle: "Day 7: 당기기 (등 / 이두 / 후면삼각근)",
+      exercises: [
+        { id: "p7_warm", name: "케이블 암풀다운", sets: 4, isMain: false, rest: "1분", reps: "12~15회", rir: "RIR 3", type: "선피로" },
+        { id: "p7_main", name: "바벨로우", sets: 4, isMain: true, mainKey: "row", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
+        { id: "p7_sub1", name: "어시스트 풀업", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p7_sub2", name: "시티드 로우", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p7_sub3", name: "바벨 컬", sets: 3, isMain: false, reps: "10~12회", rir: "RIR 1", rest: "1분", type: "드롭세트" },
+        { id: "p7_sub4", name: "리어 델트 플라이", sets: 3, isMain: false, reps: "12~15회", rir: "RIR 0", rest: "1분", type: "후면" }
+      ]
+    },
+    {
+      dayId: "day8", dayTitle: "Day 8: 하체 & 코어 (스쿼트)",
+      exercises: [
+        { id: "p8_warm", name: "이너 타이 (내전근)", sets: 3, isMain: false, rest: "1분 30초", isDynamic: true, type: "활성화" },
+        { id: "p8_main", name: "바벨 스쿼트", sets: 4, isMain: true, mainKey: "squat", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
+        { id: "p8_sub1", name: "레그 프레스", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p8_sub2", name: "레그 컬", sets: 4, isMain: false, rest: "1분 30초", reps: "10~12회", rir: "RIR 2.5", type: "본세트" },
+        { id: "p8_sub3", name: "윗몸 일으키기", sets: 5, isMain: false, rest: "1분", reps: "최대 반복", rir: "실패지점", type: "코어" }
+      ]
+    },
+    { dayId: "day9", dayTitle: "Day 9: 휴식 (Recovery)", isRest: true }
+  ];
+
+  const DELOAD_TEMPLATE = [
+    { dayId: "day1", dayTitle: "Day 1: 가슴 템포 디로딩", exercises: [{ id: "dl1_main", name: "인클라인 벤치프레스", sets: 4, isMain: true, mainKey: "bench", rest: "1분 30초", reps: "8~10회", rir: "RIR 4", type: "템포 디로딩" }] },
+    { dayId: "day2", dayTitle: "Day 2: 등 템포 디로딩", exercises: [{ id: "dl2_main", name: "바벨로우", sets: 4, isMain: true, mainKey: "row", rest: "1분 30초", reps: "8~10회", rir: "RIR 4", type: "템포 디로딩" }] },
+    { dayId: "day3", dayTitle: "Day 3: 휴식 (Recovery)", isRest: true },
+    { dayId: "day4", dayTitle: "Day 4: 하체 템포 디로딩", exercises: [{ id: "dl4_main", name: "바벨 스쿼트", sets: 4, isMain: true, mainKey: "squat", rest: "1분 30초", reps: "8~10회", rir: "RIR 4", type: "템포 디로딩" }] },
+    { dayId: "day5", dayTitle: "Day 5: 가슴 템포 디로딩", exercises: [{ id: "dl5_main", name: "인클라인 벤치프레스", sets: 4, isMain: true, mainKey: "bench", rest: "1분 30초", reps: "8~10회", rir: "RIR 4", type: "템포 디로딩" }] },
+    { dayId: "day6", dayTitle: "Day 6: 휴식 (Recovery)", isRest: true },
+    { dayId: "day7", dayTitle: "Day 7: 등 템포 디로딩", exercises: [{ id: "dl7_main", name: "바벨로우", sets: 4, isMain: true, mainKey: "row", rest: "1분 30초", reps: "8~10회", rir: "RIR 4", type: "템포 디로딩" }] },
+    { dayId: "day8", dayTitle: "Day 8: 하체 템포 디로딩", exercises: [{ id: "dl8_main", name: "바벨 스쿼트", sets: 4, isMain: true, mainKey: "squat", rest: "1분 30초", reps: "8~10회", rir: "RIR 4", type: "템포 디로딩" }] },
+    { dayId: "day9", dayTitle: "Day 9: 휴식 (Recovery)", isRest: true }
+  ];
+
+  function switchTab(tabId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+  }
+
+  function roundWeight(w) {
+    return (Math.round(w * 2) / 2).toFixed(1);
+  }
+
+  function get1RM() {
+    return {
+      bench: parseFloat(document.getElementById('rm-bench').value) || 71,
+      row: parseFloat(document.getElementById('rm-row').value) || 60,
+      squat: parseFloat(document.getElementById('rm-squat').value) || 150
+    };
+  }
+
+  function getStageTopWeight(key) {
+    const stage = document.getElementById('stage-select').value;
+    const cfg = STAGE_CONFIG[stage] || STAGE_CONFIG["1"];
+    const rms = get1RM();
+    return roundWeight((rms[key] || 0) * cfg.pct);
+  }
+
+  function updateTopSetSummary() {
+    const rms = get1RM();
+    const tbody = document.getElementById('topset-summary-tbody');
+    tbody.innerHTML = '';
+    const stKeys = ["1", "2", "3", "4", "4.5", "5", "6", "7", "8", "8.5"];
+    stKeys.forEach(k => {
+      const c = STAGE_CONFIG[k];
+      const isDel = c.isDeload;
+      tbody.innerHTML += `
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 8px; border: 1px solid var(--border);"><strong>${k}단계 ${isDel ? '(디로딩)' : ''}</strong></td>
+          <td style="padding: 8px; border: 1px solid var(--border);">${Math.round(c.pct * 100)}%</td>
+          <td style="padding: 8px; border: 1px solid var(--border);">${c.topReps}</td>
+          <td style="padding: 8px; border: 1px solid var(--border); font-weight: bold; color: var(--accent);">${roundWeight(rms.bench * c.pct)} kg</td>
+          <td style="padding: 8px; border: 1px solid var(--border); font-weight: bold; color: var(--accent);">${roundWeight(rms.row * c.pct)} kg</td>
+          <td style="padding: 8px; border: 1px solid var(--border); font-weight: bold; color: var(--accent);">${roundWeight(rms.squat * c.pct)} kg</td>
+        </tr>
+      `;
+    });
+
+    document.getElementById('bar-bench-w').innerText = getStageTopWeight('bench') + ' kg';
+    document.getElementById('bar-row-w').innerText = getStageTopWeight('row') + ' kg';
+    document.getElementById('bar-squat-w').innerText = getStageTopWeight('squat') + ' kg';
+  }
+
+  function renderWorkout() {
+    const stage = document.getElementById('stage-select').value;
+    const selectedDay = document.getElementById('day-select').value;
+    const cfg = STAGE_CONFIG[stage] || STAGE_CONFIG["1"];
+    const container = document.getElementById('workout-container');
+    const info = document.getElementById('stage-info');
+
+    if (cfg.isDeload) {
+      info.innerHTML = `
+        <div class="deload-box">
+          ⚠️ <strong>${stage}단계 디로딩 템포 안내</strong>: ${cfg.desc}<br>
+          • <strong>강도</strong>: 50% 1RM | <strong>템포</strong>: 3초 신장(이완) ➔ 1초 정지(홀드) ➔ 2초 단축(수축) | <strong>여유</strong>: ${cfg.topRIR}
+        </div>
+      `;
+    } else {
+      info.innerHTML = `
+        <div class="guide-box">
+          📌 <strong>${stage}단계 훈련 목표</strong>: ${cfg.desc}<br>
+          • <strong>메인 탑세트(3세트째) 강도</strong>: ${Math.round(cfg.pct * 100)}% 1RM (목표: ${cfg.topReps}) | <strong>휴식 시간</strong>: ${cfg.rest} | <strong>보조운동</strong>: ${cfg.subReps} (${cfg.subRIR})
+        </div>
+      `;
+    }
+
+    const template = cfg.isDeload ? DELOAD_TEMPLATE : ROUTINE_TEMPLATE;
+    let html = '';
+
+    template.forEach((d) => {
+      if (d.dayId !== selectedDay) return;
+
+      if (d.isRest) {
+        html += `
+          <div style="background: rgba(255,255,255,0.02); border: 1px dashed var(--border); border-radius: 10px; padding: 24px; text-align: center; color: var(--subtext); font-size: 1.05rem;">
+            🛌 <strong style="color:var(--accent); font-size:1.2rem;">${d.dayTitle}</strong><br><br>
+            오늘은 완전 휴식일입니다.<br>충분한 수면과 균형 잡힌 탄수화물/단백질 섭취로 근합성을 유도하세요.
+          </div>
+        `;
+        return;
+      }
+
+      html += `
+        <div class="day-card" id="card-${d.dayId}">
+          <div class="day-header">
+            <div class="day-header-left">
+              <h3>💪 ${d.dayTitle}</h3>
+            </div>
+            <div class="day-header-right">
+              <div class="day-vol">총 볼륨: <strong id="total-vol-${d.dayId}">0</strong> kg</div>
+              <button class="btn-photo" onclick="generateWorkoutImage('${d.dayId}', '${stage}', '${d.dayTitle}')">
+                📸 기록 사진 출력
+              </button>
+            </div>
+          </div>
+      `;
+
+      d.exercises.forEach((ex) => {
+        const repsText = ex.isMain ? cfg.topReps : (ex.isDynamic ? cfg.subReps : ex.reps);
+        const rirText = ex.isMain ? cfg.topRIR : (ex.isDynamic ? cfg.subRIR : ex.rir);
+        const restText = ex.rest ? ex.rest : cfg.rest;
+
+        let badgeHtml = '';
+        if (cfg.isDeload) {
+          badgeHtml = '<span class="badge-tempo">템포 3-1-2</span>';
+        } else if (ex.type === '탑세트') {
+          badgeHtml = '<span class="badge-topset">탑세트 (3세트)</span>';
+        } else if (ex.type === '웜업' || ex.type === '선피로' || ex.type === '활성화') {
+          badgeHtml = `<span class="badge-warmup">${ex.type}</span>`;
+        } else if (ex.type === '드롭세트') {
+          badgeHtml = '<span class="badge-drop">드롭세트</span>';
+        }
+
+        html += `
+          <div class="ex-box">
+            <div class="ex-title-row">
+              <span class="ex-name">${ex.name} ${badgeHtml}</span>
+              <span class="ex-meta">휴식: ${restText} | 목표: ${repsText} (${rirText})</span>
+            </div>
+            <table class="set-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">세트</th>
+                  <th>구분</th>
+                  <th>중량 (kg)</th>
+                  <th>반복 (회)</th>
+                  <th style="width: 80px;">세트 볼륨</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        for (let s = 1; s <= ex.sets; s++) {
+          const isTopSetRow = (ex.isMain && s === 3);
+          const inputIdW = `inp_${stage}_${d.dayId}_${ex.id}_s${s}_w`;
+          const inputIdR = `inp_${stage}_${d.dayId}_${ex.id}_s${s}_r`;
+
+          let savedW = localStorage.getItem(inputIdW);
+          let savedR = localStorage.getItem(inputIdR) || '';
+
+          let topWeight = '';
+          if (isTopSetRow) {
+            topWeight = getStageTopWeight(ex.mainKey);
+            if (savedW === null || savedW === '') savedW = topWeight;
+          } else {
+            if (savedW === null) savedW = '';
+          }
+
+          let rowBadge = '';
+          if (isTopSetRow) {
+            rowBadge = `<span class="topset-badge-inline">🎯 탑세트</span>`;
+          } else if (s <= 2 && ex.isMain) {
+            rowBadge = `<span style="font-size:0.75rem; color:var(--subtext);">웜업</span>`;
+          } else if (s === 4 && ex.isMain) {
+            rowBadge = `<span style="font-size:0.75rem; color:var(--subtext);">백오프</span>`;
+          }
+
+          html += `
+            <tr>
+              <td><strong>${s}</strong></td>
+              <td>${rowBadge || '-'}</td>
+              <td>
+                <input type="number" step="0.5" id="${inputIdW}" value="${savedW}" 
+                  class="${isTopSetRow ? 'topset-input' : ''}" 
+                  placeholder="${isTopSetRow ? topWeight : '직접입력'}"
+                  oninput="onSetInputChange('${d.dayId}', '${stage}', '${ex.name}', '${ex.id}', ${ex.sets})" />
+              </td>
+              <td>
+                <input type="number" step="1" id="${inputIdR}" value="${savedR}" 
+                  placeholder="횟수" 
+                  oninput="onSetInputChange('${d.dayId}', '${stage}', '${ex.name}', '${ex.id}', ${ex.sets})" />
+              </td>
+              <td class="set-vol" id="vol_${stage}_${d.dayId}_${ex.id}_s${s}">0 kg</td>
+            </tr>
+          `;
+        }
+
+        html += `
+              </tbody>
+            </table>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+    });
+
+    container.innerHTML = html;
+    calculateAllVolumes(stage);
+  }
+
+  // ========================================================
+  // 4. 세트 입력 감지 & LocalStorage 저장 & Google Sheets API 실시간 동기화
+  // ========================================================
+  let syncDebounceTimer = null;
+
+  function onSetInputChange(dayId, stage, exName, exId, totalSets) {
+    calculateAllVolumes(stage);
+    saveInputsToStorage();
+
+    if (!gAccessToken || !userSpreadsheetId) return;
+
+    const badge = document.getElementById('sync-status-badge');
+    badge.innerHTML = '<span style="color:var(--warning);">⏳ 시트 동기화 대기 중...</span>';
+
+    clearTimeout(syncDebounceTimer);
+    syncDebounceTimer = setTimeout(() => {
+      const setsData = [];
+      for (let s = 1; s <= totalSets; s++) {
+        const wVal = document.getElementById(`inp_${stage}_${dayId}_${exId}_s${s}_w`)?.value;
+        const rVal = document.getElementById(`inp_${stage}_${dayId}_${exId}_s${s}_r`)?.value;
+        if (wVal !== undefined && rVal !== undefined) {
+          setsData.push({ set: s, weight: wVal, reps: rVal });
+        }
+      }
+      syncToGoogleSheetsAPI(stage, dayId, exName, setsData);
+    }, 1200);
+  }
+
+  // Google Sheets API로 시트 행을 검색하고 값 기록
+  async function syncToGoogleSheetsAPI(stage, dayId, exName, setsData) {
+    const badge = document.getElementById('sync-status-badge');
+    badge.innerHTML = '<span style="color:var(--warning);">🔄 구글 시트로 기록 전송 중...</span>';
+
+    const stageSheetName = stage.includes("단계") ? stage : (stage + "단계");
+    const dayNum = parseInt(dayId.replace("day", ""), 10);
+
+    try {
+      // 1) 해당 단계 시트의 A1:H60 범위 데이터 조회 (종목 행 위치 확인)
+      const getRes = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${userSpreadsheetId}/values/${encodeURIComponent(stageSheetName)}!A1:H60`,
+        { headers: { 'Authorization': `Bearer ${gAccessToken}` } }
+      );
+      const sheetData = await getRes.json();
+      const rows = sheetData.values || [];
+
+      let targetRow = -1;
+      let curDay = 0;
+      const cleanEx = exName.replace(/\s+/g, "");
+
+      for (let i = 0; i < rows.length; i++) {
+        const colA = String(rows[i][0] || '').trim();
+        if (!isNaN(parseInt(colA, 10))) curDay = parseInt(colA, 10);
+
+        if (curDay === dayNum) {
+          for (let j = 1; j <= 4; j++) {
+            const cell = String(rows[i][j] || '').replace(/\s+/g, "");
+            if (cell.includes(cleanEx) || cleanEx.includes(cell)) {
+              targetRow = i + 1;
+              break;
+            }
+          }
+          if (targetRow !== -1) break;
+        }
+      }
+
+      if (targetRow === -1) {
+        badge.innerHTML = `<span style="color:var(--danger);">⚠️ 시트에서 ${exName} 위치를 찾지 못함</span>`;
+        return;
+      }
+
+      // 2) 세트 1 ~ 세트 4 (열 I:P) 데이터 구성
+      // I: 세트1 W, J: 세트1 R, K: 세트2 W, L: 세트2 R, M: 세트3 W, N: 세트3 R, O: 세트4 W, P: 세트4 R
+      const updateRowValues = ['', '', '', '', '', '', '', ''];
+      setsData.forEach(s => {
+        const idx = (s.set - 1) * 2;
+        if (idx >= 0 && idx < 8) {
+          updateRowValues[idx] = s.weight !== "" ? parseFloat(s.weight) : "";
+          updateRowValues[idx + 1] = s.reps !== "" ? parseFloat(s.reps) : "";
+        }
+      });
+
+      // 3) 셀 업데이트 실행
+      const putRes = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${userSpreadsheetId}/values/${encodeURIComponent(stageSheetName)}!I${targetRow}:P${targetRow}?valueInputOption=USER_ENTERED`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${gAccessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ values: [updateRowValues] })
+        }
+      );
+
+      if (putRes.ok) {
+        badge.innerHTML = '<span style="color:var(--success);">☁️ 구글 시트 실시간 동기화 완료!</span>';
+        setTimeout(() => {
+          badge.innerHTML = '<span style="color:var(--success);">☁️ 내 구글 시트 실시간 연동됨</span>';
+        }, 2000);
+      } else {
+        throw new Error('시트 저장 응답 오류');
+      }
+    } catch (e) {
+      badge.innerHTML = `<span style="color:var(--danger);">⚠️ 시트 저장 실패: ${e.message}</span>`;
+    }
+  }
+
+  function saveInputsToStorage() {
+    const inputs = document.querySelectorAll('#workout-container input');
+    inputs.forEach(inp => {
+      if (inp.id) {
+        localStorage.setItem(inp.id, inp.value);
+      }
+    });
+  }
+
+  function calculateAllVolumes(stage) {
+    const cfg = STAGE_CONFIG[stage] || STAGE_CONFIG["1"];
+    const template = cfg.isDeload ? DELOAD_TEMPLATE : ROUTINE_TEMPLATE;
+
+    template.forEach(d => {
+      if (d.isRest) return;
+      let dayTotal = 0;
+      d.exercises.forEach(ex => {
+        for (let s = 1; s <= ex.sets; s++) {
+          const wInp = document.getElementById(`inp_${stage}_${d.dayId}_${ex.id}_s${s}_w`);
+          const rInp = document.getElementById(`inp_${stage}_${d.dayId}_${ex.id}_s${s}_r`);
+          const volEl = document.getElementById(`vol_${stage}_${d.dayId}_${ex.id}_s${s}`);
+
+          if (wInp && rInp && volEl) {
+            const w = parseFloat(wInp.value) || 0;
+            const r = parseFloat(rInp.value) || 0;
+            const setVol = Math.round(w * r);
+            volEl.innerText = setVol.toLocaleString() + ' kg';
+            dayTotal += setVol;
+          }
+        }
+      });
+
+      const dayTotalEl = document.getElementById(`total-vol-${d.dayId}`);
+      if (dayTotalEl) {
+        dayTotalEl.innerText = dayTotal.toLocaleString();
+      }
+    });
+  }
+
+  function onStageChange() {
+    updateTopSetSummary();
+    renderWorkout();
+  }
+
+  function saveAndRefresh() {
+    const rms = get1RM();
+    localStorage.setItem('bulk_rm_bench', rms.bench);
+    localStorage.setItem('bulk_rm_row', rms.row);
+    localStorage.setItem('bulk_rm_squat', rms.squat);
+    updateTopSetSummary();
+    renderWorkout();
+  }
+
+  function clearCurrentRecords() {
+    if (!confirm('현재 단계에 입력된 중량 및 횟수 기록을 초기화하시겠습니까?')) return;
+    const stage = document.getElementById('stage-select').value;
+    const inputs = document.querySelectorAll('#workout-container input');
+    inputs.forEach(inp => {
+      if (inp.id && inp.id.startsWith(`inp_${stage}_`)) {
+        inp.value = '';
+        localStorage.removeItem(inp.id);
+      }
+    });
+    renderWorkout();
+  }
+
+  // 사진 출력
+  function generateWorkoutImage(dayId, stage, dayTitle) {
+    const cfg = STAGE_CONFIG[stage] || STAGE_CONFIG["1"];
+    const template = cfg.isDeload ? DELOAD_TEMPLATE : ROUTINE_TEMPLATE;
+    const dayData = template.find(d => d.dayId === dayId);
+    if (!dayData) return;
+
+    const workoutDate = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+    let totalVolume = 0;
+    const exSummaries = [];
+
+    dayData.exercises.forEach(ex => {
+      const setsData = [];
+      for (let s = 1; s <= ex.sets; s++) {
+        const wInp = document.getElementById(`inp_${stage}_${dayId}_${ex.id}_s${s}_w`);
+        const rInp = document.getElementById(`inp_${stage}_${dayId}_${ex.id}_s${s}_r`);
+        const w = (wInp && wInp.value) ? parseFloat(wInp.value) : 0;
+        const r = (rInp && rInp.value) ? parseFloat(rInp.value) : 0;
+        const isTop = (ex.isMain && s === 3);
+
+        if (w > 0 && r > 0) {
+          totalVolume += (w * r);
+          setsData.push({ set: s, w, r, isTop });
+        } else if (wInp && wInp.value) {
+          setsData.push({ set: s, w, r: 0, isTop });
+        }
+      }
+      exSummaries.push({
+        name: ex.name,
+        type: ex.type,
+        isMain: ex.isMain,
+        sets: setsData
+      });
+    });
+
+    const canvasWidth = 750;
+    let estimatedHeight = 270;
+    exSummaries.forEach(ex => {
+      estimatedHeight += 44;
+      estimatedHeight += (ex.sets.length > 0 ? ex.sets.length * 28 : 28);
+      estimatedHeight += 16;
+    });
+    estimatedHeight += 90;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = canvasWidth;
+    canvas.height = estimatedHeight;
+    const ctx = canvas.getContext('2d');
+
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    bgGrad.addColorStop(0, '#0f172a');
+    bgGrad.addColorStop(1, '#1e293b');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 30px -apple-system, sans-serif';
+    ctx.fillText('🏋🏻‍♂️ 벌크업의 정석 — 오운완 기록', 36, 56);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '15px -apple-system, sans-serif';
+    ctx.fillText(`${workoutDate}  |  ${stage}단계 (${Math.round(cfg.pct * 100)}% 1RM 주기화)`, 38, 86);
+
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(36, 104);
+    ctx.lineTo(canvas.width - 36, 104);
+    ctx.stroke();
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.font = 'bold 22px -apple-system, sans-serif';
+    ctx.fillText(`💪 ${dayTitle}`, 36, 142);
+
+    ctx.fillStyle = '#0b1120';
+    ctx.fillRect(36, 160, canvas.width - 72, 72);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(36, 160, canvas.width - 72, 72);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '14px -apple-system, sans-serif';
+    ctx.fillText('당일 훈련 총 볼륨 (Total Volume)', 56, 188);
+
+    ctx.fillStyle = '#22c55e';
+    ctx.font = 'bold 28px -apple-system, sans-serif';
+    ctx.fillText(`${totalVolume.toLocaleString()} kg`, 56, 218);
+
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = 'bold 15px -apple-system, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`강도: ${Math.round(cfg.pct * 100)}%  /  목표: ${cfg.topReps}`, canvas.width - 56, 204);
+    ctx.textAlign = 'left';
+
+    let currentY = 265;
+    exSummaries.forEach(ex => {
+      ctx.fillStyle = '#273549';
+      ctx.fillRect(36, currentY, canvas.width - 72, 34);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px -apple-system, sans-serif';
+      ctx.fillText(ex.name, 48, currentY + 23);
+
+      ctx.fillStyle = ex.isMain ? '#f59e0b' : '#38bdf8';
+      ctx.font = 'bold 13px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(ex.type, canvas.width - 48, currentY + 23);
+      ctx.textAlign = 'left';
+
+      currentY += 40;
+
+      if (ex.sets.length === 0) {
+        ctx.fillStyle = '#64748b';
+        ctx.font = '14px -apple-system, sans-serif';
+        ctx.fillText('- 입력된 세트 기록이 없습니다.', 52, currentY + 16);
+        currentY += 28;
+      } else {
+        ex.sets.forEach(s => {
+          ctx.fillStyle = s.isTop ? '#fef08a' : '#cbd5e1';
+          ctx.font = s.isTop ? 'bold 14px -apple-system, sans-serif' : '14px -apple-system, sans-serif';
+
+          const setTag = s.isTop ? `🎯 ${s.set}세트 (탑세트)` : `   ${s.set}세트`;
+          ctx.fillText(setTag, 52, currentY + 16);
+
+          const weightReps = `${s.w} kg  ×  ${s.r} 회`;
+          ctx.fillText(weightReps, 230, currentY + 16);
+
+          const setVol = (s.w * s.r);
+          ctx.fillStyle = '#94a3b8';
+          ctx.textAlign = 'right';
+          ctx.fillText(setVol > 0 ? `${setVol.toLocaleString()} kg` : '-', canvas.width - 52, currentY + 16);
+          ctx.textAlign = 'left';
+
+          currentY += 26;
+        });
+      }
+
+      currentY += 12;
+    });
+
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(36, currentY + 10);
+    ctx.lineTo(canvas.width - 36, currentY + 10);
+    ctx.stroke();
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '13px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🔥 벌크업의 정석 — 점진적 과부하 달성 완료!', canvas.width / 2, currentY + 38);
+    ctx.textAlign = 'left';
+
+    const dataURL = canvas.toDataURL('image/png');
+    document.getElementById('generatedImg').src = dataURL;
+    document.getElementById('modal-heading').innerText = `📸 [${stage}단계] ${dayTitle} 기록 카드`;
+    
+    const downloadLink = document.getElementById('downloadLink');
+    downloadLink.href = dataURL;
+    downloadLink.download = `벌크업_${stage}단계_${dayId}_기록.png`;
+
+    document.getElementById('imageModal').classList.add('active');
+  }
+
+  function closeImageModal(e) {
+    document.getElementById('imageModal').classList.remove('active');
+  }
+
+  function calcEpley() {
+    const w = parseFloat(document.getElementById('epley-w').value) || 0;
+    const r = parseFloat(document.getElementById('epley-r').value) || 0;
+    if (w <= 0 || r <= 0) return;
+    const oneRM = roundWeight(w * (1 + r / 30));
+    document.getElementById('epley-res').innerHTML = `
+      🎯 계산된 1RM: <strong style="font-size:1.15rem; color:#fff;">${oneRM} kg</strong>
+      <button onclick="applyEpleyToBench(${oneRM})" style="margin-left:8px; padding:4px 8px; background:var(--accent); border:none; border-radius:4px; font-weight:bold; cursor:pointer;">벤치에 대입</button>
+      <button onclick="applyEpleyToRow(${oneRM})" style="margin-left:4px; padding:4px 8px; background:var(--accent); border:none; border-radius:4px; font-weight:bold; cursor:pointer;">로우에 대입</button>
+      <button onclick="applyEpleyToSquat(${oneRM})" style="margin-left:4px; padding:4px 8px; background:var(--accent); border:none; border-radius:4px; font-weight:bold; cursor:pointer;">스쿼트에 대입</button>
+    `;
+  }
+
+  function applyEpleyToBench(v) { document.getElementById('rm-bench').value = v; saveAndRefresh(); }
+  function applyEpleyToRow(v) { document.getElementById('rm-row').value = v; saveAndRefresh(); }
+  function applyEpleyToSquat(v) { document.getElementById('rm-squat').value = v; saveAndRefresh(); }
+
+  function calcDiet() {
+    const gender = document.getElementById('gender').value;
+    const age = parseFloat(document.getElementById('age').value);
+    const h = parseFloat(document.getElementById('height').value);
+    const w = parseFloat(document.getElementById('weight').value);
+    const act = parseFloat(document.getElementById('activity').value);
+
+    let bmr = (gender === 'm') 
+      ? 66.5 + (13.75 * w) + (5.003 * h) - (6.75 * age)
+      : 655.1 + (9.563 * w) + (1.850 * h) - (4.676 * age);
+    bmr = Math.round(bmr);
+
+    const tdee = Math.round(bmr * act);
+    const bulk = Math.round(tdee * 1.2);
+
+    const protG = Math.round(w * 1.8);
+    const protKcal = protG * 4;
+    
+    const fatKcal = Math.round(bulk * 0.17);
+    const fatG = Math.round(fatKcal / 9);
+
+    const carbKcal = bulk - protKcal - fatKcal;
+    const carbG = Math.round(carbKcal / 4);
+
+    document.getElementById('bmr-val').innerText = bmr.toLocaleString() + ' kcal';
+    document.getElementById('tdee-val').innerText = tdee.toLocaleString() + ' kcal';
+    document.getElementById('bulk-val').innerText = bulk.toLocaleString() + ' kcal';
+
+    document.getElementById('carb-g').innerText = carbG + 'g';
+    document.getElementById('carb-k').innerText = carbKcal.toLocaleString() + ' kcal';
+    document.getElementById('carb-p').innerText = Math.round((carbKcal / bulk) * 100) + '%';
+
+    document.getElementById('prot-g').innerText = protG + 'g';
+    document.getElementById('prot-k').innerText = protKcal.toLocaleString() + ' kcal';
+    document.getElementById('prot-p').innerText = Math.round((protKcal / bulk) * 100) + '%';
+
+    document.getElementById('fat-g').innerText = fatG + 'g';
+    document.getElementById('fat-k').innerText = fatKcal.toLocaleString() + ' kcal';
+    document.getElementById('fat-p').innerText = Math.round((fatKcal / bulk) * 100) + '%';
+  }
+
+  // 초기화 및 복원
+  window.onload = function() {
+    if (localStorage.getItem('bulk_rm_bench')) document.getElementById('rm-bench').value = localStorage.getItem('bulk_rm_bench');
+    if (localStorage.getItem('bulk_rm_row')) document.getElementById('rm-row').value = localStorage.getItem('bulk_rm_row');
+    if (localStorage.getItem('bulk_rm_squat')) document.getElementById('rm-squat').value = localStorage.getItem('bulk_rm_squat');
+    
+    if (userSpreadsheetId) {
+      showConnectedState(userSpreadsheetId);
+    }
+
+    updateTopSetSummary();
+    renderWorkout();
+    calcDiet();
+
+    // 구글 스크립트 로드 대기 후 초기화
+    setTimeout(initGoogleAuth, 800);
+  };
+</script>
+</body>
+</html>
