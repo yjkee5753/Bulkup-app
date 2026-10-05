@@ -454,7 +454,7 @@
     if (!window.google) return;
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets',
+      scope: 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/spreadsheets',
       callback: async (resp) => {
         if (resp.error) {
           alert('구글 로그인 실패: ' + resp.error);
