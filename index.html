@@ -471,7 +471,7 @@
   // ========================================================
   // 2. 구글 OAuth 로그인 및 드라이브 시트 자동 복제 로직
   // ========================================================
-  function initGoogleAuth() {
+function initGoogleAuth() {
     if (!window.google) return;
     tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
@@ -484,13 +484,8 @@
         gAccessToken = resp.access_token;
         sessionStorage.setItem('bulk_g_access_token', gAccessToken);
 
-        document.getElementById('sync-status-badge').innerHTML = '<span style="color:var(--warning);">🔄 내 구글 드라이브 시트 확인 중...</span>';
-
-        if (!userSpreadsheetId) {
-          await createTemplateCopyInUserDrive();
-        } else {
-          showConnectedState(userSpreadsheetId);
-        }
+        // 🔍 기존 시트가 있는지 검색 후 연동 (없을 때만 새로 생성)
+        await findOrCreateUserSheet();
       }
     });
   }
@@ -506,6 +501,45 @@
     tokenClient.requestAccessToken({ prompt: '' });
   }
 
+// 🔍 내 구글 드라이브에서 기존 벌크업 시트 검색 및 자동 연동
+  async function findOrCreateUserSheet() {
+    const badge = document.getElementById('sync-status-badge');
+    badge.innerHTML = '<span style="color:var(--warning);">🔍 기존 벌크업 시트 확인 중...</span>';
+
+    const targetFileName = "🏋🏻‍♂️ 벌크업의 정석 (내 운동 일지)";
+
+    try {
+      // 내 드라이브에서 휴지통에 가지 않은 동일한 이름의 스프레드시트 검색
+      const q = `name = '${targetFileName}' and trashed = false and mimeType = 'application/vnd.google-apps.spreadsheet'`;
+      const res = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&orderBy=createdTime%20desc&fields=files(id,name,createdTime)`,
+        { headers: { 'Authorization': `Bearer ${gAccessToken}` } }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        // 1) 기존 시트가 발견된 경우 -> 가장 최근 파일의 ID로 즉시 연결
+        if (data.files && data.files.length > 0) {
+          userSpreadsheetId = data.files[0].id;
+          localStorage.setItem('bulk_user_sheet_id', userSpreadsheetId);
+          showConnectedState(userSpreadsheetId);
+          badge.innerHTML = '<span style="color:var(--success);">☁️ 기존 시트 자동 연동 완료!</span>';
+          setTimeout(() => showConnectedState(userSpreadsheetId), 2000);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("기존 시트 검색 중 오류 발생:", err);
+    }
+
+    // 2) 검색 결과 기존 시트가 전혀 없는 경우에만 신규 복사 생성
+    if (!userSpreadsheetId) {
+      await createTemplateCopyInUserDrive();
+    } else {
+      showConnectedState(userSpreadsheetId);
+    }
+  }
+  
   async function createTemplateCopyInUserDrive() {
     const badge = document.getElementById('sync-status-badge');
     badge.innerHTML = '<span style="color:var(--warning);">📂 내 드라이브에 시트 자동 생성 중...</span>';
