@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -970,7 +969,8 @@
       if (d.dayId !== selectedDay) return;
 
       const savedDate = localStorage.getItem(`inp_${stage}_${d.dayId}_date`) || new Date().toISOString().split('T')[0];
-      const savedWeight = localStorage.getItem(`inp_${stage}_${dayId}_weight`) || '';
+      // [수정 완료]: d.dayId 로 정상 참조
+      const savedWeight = localStorage.getItem(`inp_${stage}_${d.dayId}_weight`) || '';
 
       const metaBarHtml = `
         <div class="day-meta-bar">
@@ -1577,6 +1577,7 @@
     if (ctxChest) {
       if (chartChestInstance) chartChestInstance.destroy();
       chartChestInstance = new Chart(ctxChest, {
+        type: 'bar',
         data: {
           labels: STAGE_LABELS,
           datasets: [
@@ -1613,6 +1614,7 @@
     if (ctxBack) {
       if (chartBackInstance) chartBackInstance.destroy();
       chartBackInstance = new Chart(ctxBack, {
+        type: 'bar',
         data: {
           labels: STAGE_LABELS,
           datasets: [
@@ -1649,6 +1651,7 @@
     if (ctxLeg) {
       if (chartLegInstance) chartLegInstance.destroy();
       chartLegInstance = new Chart(ctxLeg, {
+        type: 'bar',
         data: {
           labels: STAGE_LABELS,
           datasets: [
