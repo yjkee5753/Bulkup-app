@@ -320,7 +320,7 @@
 <div class="container">
   <header>
     <h1>🏋🏻‍♂️ 벌크업의 정석 트레이닝 & 칼로리 매니저</h1>
-    <p>1RM 탑세트 자동 연동 & H열 휴식 타이머 & S열 훈련법 실시간 구글 시트 양방향 동기화</p>
+    <p>1RM 탑세트 자동 연동 & 운동별 휴식 타이머 & 훈련법 실시간 구글 시트 양방향 동기화</p>
   </header>
 
   <!-- 🔗 구글 로그인 및 시트 실시간 동기화 바 -->
@@ -1028,7 +1028,7 @@
         { id: "p1_main", name: "인클라인 벤치프레스", sets: 4, isMain: true, mainKey: "bench", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
         { id: "p1_sub1", name: "체스트 프레스 머신", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
         { id: "p1_sub2", name: "체스트 플라이 머신", sets: 3, isMain: false, isDynamic: true, type: "본세트" },
-        { id: "p1_sub3", name: "트라이셉스 푸쉬다운", sets: 3, isMain: false, reps: "10~12회", rir: "RIR 1", rest: "1분", type: "드롭세트" },
+        { id: "p1_sub3", name: "트라이셉스 푸쉬다운", sets: 3, isMain: false, isDynamic: true, rest: "1분", type: "본세트" },
         { id: "p1_sub4", name: "머신 숄더 프레스", sets: 3, isMain: false, isDynamic: true, type: "본세트" }
       ]
     },
@@ -1039,7 +1039,7 @@
         { id: "p2_main", name: "바벨로우", sets: 4, isMain: true, mainKey: "row", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
         { id: "p2_sub1", name: "어시스트 풀업", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
         { id: "p2_sub2", name: "시티드 로우", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
-        { id: "p2_sub3", name: "바벨 컬", sets: 3, isMain: false, reps: "10~12회", rir: "RIR 1", rest: "1분", type: "드롭세트" },
+        { id: "p2_sub3", name: "바벨 컬", sets: 3, isMain: false, isDynamic: true, rest: "1분", type: "본세트" },
         { id: "p2_sub4", name: "리어 델트 플라이", sets: 3, isMain: false, reps: "12~15회", rir: "RIR 0", rest: "1분", type: "후면" }
       ]
     },
@@ -1061,7 +1061,7 @@
         { id: "p5_main", name: "인클라인 벤치프레스", sets: 4, isMain: true, mainKey: "bench", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
         { id: "p5_sub1", name: "체스트 프레스 머신", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
         { id: "p5_sub2", name: "체스트 플라이 머신", sets: 3, isMain: false, isDynamic: true, type: "본세트" },
-        { id: "p5_sub3", name: "트라이셉스 푸쉬다운", sets: 3, isMain: false, reps: "10~12회", rir: "RIR 1", rest: "1분", type: "드롭세트" },
+        { id: "p5_sub3", name: "트라이셉스 푸쉬다운", sets: 3, isMain: false, isDynamic: true, rest: "1분", type: "본세트" },
         { id: "p5_sub4", name: "머신 숄더 프레스", sets: 3, isMain: false, isDynamic: true, type: "본세트" }
       ]
     },
@@ -1073,7 +1073,7 @@
         { id: "p7_main", name: "바벨로우", sets: 4, isMain: true, mainKey: "row", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
         { id: "p7_sub1", name: "어시스트 풀업", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
         { id: "p7_sub2", name: "시티드 로우", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
-        { id: "p7_sub3", name: "바벨 컬", sets: 3, isMain: false, reps: "10~12회", rir: "RIR 1", rest: "1분", type: "드롭세트" },
+        { id: "p7_sub3", name: "바벨 컬", sets: 3, isMain: false, isDynamic: true, rest: "1분", type: "본세트" },
         { id: "p7_sub4", name: "리어 델트 플라이", sets: 3, isMain: false, reps: "12~15회", rir: "RIR 0", rest: "1분", type: "후면" }
       ]
     },
@@ -1123,6 +1123,8 @@
     if (!trainingMethod) return '';
 
     const clean = trainingMethod.trim();
+    if (!clean || clean === '본세트' || clean === '일반' || clean === '-') return '';
+
     if (clean.includes('탑') || clean.includes('Top')) {
       return `<span class="badge-topset">🎯 ${clean}</span>`;
     }
@@ -1303,8 +1305,11 @@
         const cleanName = ex.name.replace(/\s+/g, "");
 
         // 1) S열(훈련법) 캐시 확인 (시트 연동값 우선)
+        let finalMethod = ex.type || (ex.isMain ? '탑세트' : '본세트');
         const cachedMethod = localStorage.getItem(`sheet_meta_${stage}_${d.dayId}_${cleanName}_method`);
-        const finalMethod = cachedMethod || ex.type || (ex.isMain ? '탑세트' : '본세트');
+        if (cachedMethod !== null) {
+          finalMethod = cachedMethod;
+        }
         const badgeHtml = getTrainingBadgeHtml(finalMethod, cfg.isDeload);
 
         // 2) H열(휴식시간/타이머) 캐시 확인
@@ -1331,7 +1336,7 @@
             <!-- ⏱️ H열 휴식시간 연동 실시간 인터랙티브 타이머 바 -->
             <div class="ex-timer-bar">
               <div class="timer-info-group">
-                <span class="timer-title">⏱️ 휴식 타이머 (H열: ${restText}):</span>
+                <span class="timer-title">⏱️ 휴식 타이머:</span>
                 <span class="timer-display" id="timer-display-${timerKey}">${formatTime(timerSeconds)}</span>
                 <span class="timer-status-pill" id="timer-status-${timerKey}">대기</span>
               </div>
@@ -1436,7 +1441,7 @@
     const stage = document.getElementById('stage-select').value;
     const stageSheetName = stage.includes("단계") ? stage : (stage + "단계");
     const badge = document.getElementById('sync-status-badge');
-    badge.innerHTML = `<span style="color:var(--warning);">📥 [${stageSheetName}] H열 타이머 & S열 훈련법 로드 중...</span>`;
+    badge.innerHTML = `<span style="color:var(--warning);">📥 [${stageSheetName}] 휴식 타이머 & 훈련법 데이터 로드 중...</span>`;
 
     try {
       const quotedSheet = encodeURIComponent(`'${stageSheetName}'`);
@@ -1469,26 +1474,23 @@
           const colS = String(row[18] || '').trim(); // S열 (19번째): 훈련법
 
           // E열 또는 F열의 종목명과 일치하는 항목 확인
-          if (colH || colS) {
-            const checkName = colE || colF;
-            if (checkName) {
-              if (colH) {
-                localStorage.setItem(`sheet_meta_${stage}_${dayId}_${checkName}_rest`, colH);
-              }
-              if (colS) {
-                localStorage.setItem(`sheet_meta_${stage}_${dayId}_${checkName}_method`, colS);
-              }
-              matchedCount++;
+          const checkName = colE || colF;
+          if (checkName) {
+            if (colH) {
+              localStorage.setItem(`sheet_meta_${stage}_${dayId}_${checkName}_rest`, colH);
             }
+            // S열 훈련법은 빈 문자열이어도 저장하여 이전 드롭세트 등의 캐시를 정확히 갱신
+            localStorage.setItem(`sheet_meta_${stage}_${dayId}_${checkName}_method`, colS || '');
+            matchedCount++;
           }
         }
       }
 
-      badge.innerHTML = `<span style="color:var(--success);">☁️ [${stageSheetName}] H열/S열 연동 완료 (${matchedCount}개 종목)</span>`;
+      badge.innerHTML = `<span style="color:var(--success);">☁️ [${stageSheetName}] 타이머/훈련법 연동 완료 (${matchedCount}개 종목)</span>`;
       renderWorkout();
 
       if (showFeedback) {
-        alert(`🎉 [${stageSheetName}]의 H열 휴식 시간(타이머) 및 S열 훈련법 데이터 ${matchedCount}개를 불러와 화면에 동기화했습니다!`);
+        alert(`🎉 [${stageSheetName}]의 휴식 시간(타이머) 및 훈련법 데이터 ${matchedCount}개를 불러와 화면에 동기화했습니다!`);
       }
       setTimeout(() => showConnectedState(userSpreadsheetId), 2500);
 
