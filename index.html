@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bulk-up Tracker</title>
+  <title>트레이닝 & 칼로리 매니저</title>
   <!-- 구글 공식 로그인/인증 라이브러리 -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- Chart.js 실시간 볼륨/체중 분석 라이브러리 -->
@@ -319,7 +319,7 @@
 
 <div class="container">
   <header>
-    <h1>🏋🏻‍♂️ Bulk-up Training Manager 🏋🏻‍♂️</h1>
+    <h1>🏋🏻‍♂️ 트레이닝 & 칼로리 매니저</h1>
     <p>1RM 탑세트 자동 연동 & 운동별 휴식 타이머 & 훈련법 실시간 구글 시트 양방향 동기화</p>
   </header>
 
@@ -341,7 +341,7 @@
       </button>
 
       <button id="btn-fetch-meta" class="btn-fetch-meta" style="display:none;" onclick="fetchStageMetadataFromSheet(true)">
-        📥 시트에서 타이머/루틴 최신화
+        📥 시트 기록 전체 불러오기
       </button>
 
       <span id="sheet-link-wrapper" style="display:none;">
@@ -629,7 +629,7 @@
   <!-- TAB 5: GUIDE -->
   <section id="tab-guide" class="tab-content">
     <div class="card">
-      <div class="card-title-bar"><h2>📖 핵심 트레이닝 법칙</h2></div>
+      <div class="card-title-bar"><h2>📖 주기화 핵심 트레이닝 법칙</h2></div>
       <div class="guide-box">
         <strong>1. 3세트 탑세트(Top-Set) 실행법</strong><br>
         메인 종목(인클라인 벤치, 바벨로우, 스쿼트)은 <strong>총 4세트</strong>로 진행됩니다.<br>
@@ -1429,19 +1429,34 @@
     calculateAllVolumes(stage);
   }
 
+    // 날짜 형식 파서 (예: '2025. 6. 1' -> '2025-06-01')
+  function formatDateToISO(raw) {
+    if (!raw) return "";
+    const str = String(raw).trim();
+    const m = str.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+    if (m) {
+      const y = m[1];
+      const mo = String(m[2]).padStart(2, '0');
+      const d = String(m[3]).padStart(2, '0');
+      return `${y}-${mo}-${d}`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+    return "";
+  }
+
   // ========================================================
-  // 6. 구글 시트 H열(타이머) & S열(훈련법) 메타데이터 일괄 로드
+  // 6. 구글 시트 데이터 양방향 자동 로드 (중량/횟수, 날짜/체중, 타이머, 훈련법)
   // ========================================================
   async function fetchStageMetadataFromSheet(showFeedback = true) {
     if (!gAccessToken || !userSpreadsheetId) {
-      if (showFeedback) alert("Google 로그인 후 스프레드시트가 연동되어 있어야 메타데이터를 불러올 수 있습니다.");
+      if (showFeedback) alert("Google 로그인 후 스프레드시트가 연동되어 있어야 기록을 불러올 수 있습니다.");
       return;
     }
 
     const stage = document.getElementById('stage-select').value;
     const stageSheetName = stage.includes("단계") ? stage : (stage + "단계");
     const badge = document.getElementById('sync-status-badge');
-    badge.innerHTML = `<span style="color:var(--warning);">📥 [${stageSheetName}] 휴식 타이머 & 훈련법 데이터 로드 중...</span>`;
+    badge.innerHTML = `<span style="color:var(--warning);">📥 [${stageSheetName}] 시트 기록(중량/횟수/타이머) 불러오는 중...</span>`;
 
     try {
       const quotedSheet = encodeURIComponent(`'${stageSheetName}'`);
@@ -1455,9 +1470,14 @@
       const sheetData = await getRes.json();
       const rows = sheetData.values || [];
 
+      const cfg = STAGE_CONFIG[stage] || STAGE_CONFIG["1"];
+      const template = cfg.isDeload ? DELOAD_TEMPLATE : ROUTINE_TEMPLATE;
+
       let curDay = 0;
       let matchedCount = 0;
+      let loadedSetsCount = 0;
 
+      // 1) 각 일차별 운동 종목 및 K~R열 세트 기록(중량/횟수), H열 타이머, S열 훈련법 로드
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
         const colB = String(row[1] || '').trim();
@@ -1470,33 +1490,95 @@
           const dayId = `day${curDay}`;
           const colE = String(row[4] || '').replace(/\s+/g, "");
           const colF = String(row[5] || '').replace(/\s+/g, "");
-          const colH = String(row[7] || '').trim();  // H열 (8번째): 휴식 시간 / 타이머
-          const colS = String(row[18] || '').trim(); // S열 (19번째): 훈련법
+          const colH = String(row[7] || '').trim();  // H열: 휴식 시간 / 타이머
+          const colS = String(row[18] || '').trim(); // S열: 훈련법
 
-          // E열 또는 F열의 종목명과 일치하는 항목 확인
-          const checkName = colE || colF;
-          if (checkName) {
-            if (colH) {
-              localStorage.setItem(`sheet_meta_${stage}_${dayId}_${checkName}_rest`, colH);
+          // 현재 일차 템플릿에서 해당 운동 찾기
+          const dayObj = template.find(item => item.dayId === dayId);
+          if (dayObj && dayObj.exercises) {
+            const matchedEx = dayObj.exercises.find(ex => {
+              const cleanEx = ex.name.replace(/\s+/g, "");
+              return (colE && (colE.includes(cleanEx) || cleanEx.includes(colE))) ||
+                     (colF && (colF.includes(cleanEx) || cleanEx.includes(colF)));
+            });
+
+            if (matchedEx) {
+              const cleanExName = matchedEx.name.replace(/\s+/g, "");
+
+              // H열(휴식시간) & S열(훈련법) 캐시 저장
+              if (colH) {
+                localStorage.setItem(`sheet_meta_${stage}_${dayId}_${cleanExName}_rest`, colH);
+              }
+              localStorage.setItem(`sheet_meta_${stage}_${dayId}_${cleanExName}_method`, colS || '');
+
+              // K~R열(세트 1~4 중량 및 반복수) 로드
+              for (let s = 1; s <= matchedEx.sets; s++) {
+                const wIdx = 10 + (s - 1) * 2; // K=10, M=12, O=14, Q=16
+                const rIdx = 11 + (s - 1) * 2; // L=11, N=13, P=15, R=17
+
+                const wVal = (row[wIdx] !== undefined && row[wIdx] !== null) ? String(row[wIdx]).trim() : '';
+                const rVal = (row[rIdx] !== undefined && row[rIdx] !== null) ? String(row[rIdx]).trim() : '';
+
+                const inputIdW = `inp_${stage}_${dayId}_${matchedEx.id}_s${s}_w`;
+                const inputIdR = `inp_${stage}_${dayId}_${matchedEx.id}_s${s}_r`;
+
+                if (wVal !== '') {
+                  localStorage.setItem(inputIdW, wVal);
+                  loadedSetsCount++;
+                }
+                if (rVal !== '') {
+                  localStorage.setItem(inputIdR, rVal);
+                }
+              }
+
+              matchedCount++;
             }
-            // S열 훈련법은 빈 문자열이어도 저장하여 이전 드롭세트 등의 캐시를 정확히 갱신
-            localStorage.setItem(`sheet_meta_${stage}_${dayId}_${checkName}_method`, colS || '');
-            matchedCount++;
           }
         }
       }
 
-      badge.innerHTML = `<span style="color:var(--success);">☁️ [${stageSheetName}] 타이머/훈련법 연동 완료 (${matchedCount}개 종목)</span>`;
+      // 2) C열 날짜 및 체중 자동 로드
+      Object.keys(DAY_META_ROW_MAP).forEach(dId => {
+        const mapping = DAY_META_ROW_MAP[dId];
+        if (!mapping) return;
+
+        // C열 날짜 (행 번호 매핑)
+        const dateRowIdx = mapping.date - 1;
+        if (rows[dateRowIdx] && rows[dateRowIdx][2] !== undefined) {
+          const rawDate = String(rows[dateRowIdx][2]).trim();
+          if (rawDate) {
+            const formattedDate = formatDateToISO(rawDate);
+            if (formattedDate) {
+              localStorage.setItem(`inp_${stage}_${dId}_date`, formattedDate);
+            }
+          }
+        }
+
+        // C열 체중 (행 번호 매핑)
+        const weightRowIdx = mapping.weight - 1;
+        if (rows[weightRowIdx] && rows[weightRowIdx][2] !== undefined) {
+          const rawWeight = String(rows[weightRowIdx][2]).trim();
+          const parsedWeight = parseFloat(rawWeight);
+          if (!isNaN(parsedWeight) && parsedWeight > 0) {
+            localStorage.setItem(`inp_${stage}_${dId}_weight`, String(parsedWeight));
+          }
+        }
+      });
+
+      // 3) 화면 및 볼륨 즉시 갱신
       renderWorkout();
+      calculateAllVolumes(stage);
+
+      badge.innerHTML = `<span style="color:var(--success);">☁️ [${stageSheetName}] 시트 기록 동기화 완료!</span>`;
 
       if (showFeedback) {
-        alert(`🎉 [${stageSheetName}]의 휴식 시간(타이머) 및 훈련법 데이터 ${matchedCount}개를 불러와 화면에 동기화했습니다!`);
+        alert(`🎉 [${stageSheetName}] 스프레드시트 기록 불러오기 완료!\n\n• 동기화 종목: ${matchedCount}개\n• 불러온 세트 기록: ${loadedSetsCount}개\n• 날짜 및 체중 데이터가 화면에 반영되었습니다.`);
       }
       setTimeout(() => showConnectedState(userSpreadsheetId), 2500);
 
     } catch (err) {
-      console.warn("메타데이터 가져오기 실패:", err);
-      badge.innerHTML = `<span style="color:var(--danger);">⚠️ 시트 메타데이터 조회 오류: ${err.message}</span>`;
+      console.warn("시트 데이터 가져오기 실패:", err);
+      badge.innerHTML = `<span style="color:var(--danger);">⚠️ 시트 기록 조회 오류: ${err.message}</span>`;
     }
   }
 
@@ -2374,7 +2456,7 @@
 
     ctx.fillStyle = '#38bdf8';
     ctx.font = 'bold 30px -apple-system, sans-serif';
-    ctx.fillText('🏋🏻‍♂️ 오운완 기록', 36, 56);
+    ctx.fillText('🏋🏻‍♂️ 오운완 운동 기록 카드', 36, 56);
 
     ctx.fillStyle = '#94a3b8';
     ctx.font = '15px -apple-system, sans-serif';
