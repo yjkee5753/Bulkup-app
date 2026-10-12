@@ -21,6 +21,7 @@
       --success: #22c55e;
       --warning: #f59e0b;
       --danger: #ef4444;
+      --purple: #a855f7;
       --input-bg: #0b1120;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -51,10 +52,13 @@
     button.calc-btn { width: 100%; padding: 11px; border-radius: 8px; border: none; background: var(--accent); color: #0f172a; font-weight: bold; cursor: pointer; font-size: 0.95rem; transition: 0.2s; }
     button.calc-btn:hover { background: var(--accent-hover); }
 
+    /* 훈련법(S열) 뱃지 스타일 */
     .badge-topset { background: rgba(245, 158, 11, 0.2); color: var(--warning); border: 1px solid var(--warning); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
-    .badge-warmup { background: rgba(56, 189, 248, 0.2); color: var(--accent); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
-    .badge-drop { background: rgba(239, 68, 68, 0.2); color: var(--danger); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .badge-warmup { background: rgba(56, 189, 248, 0.2); color: var(--accent); border: 1px solid var(--accent); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .badge-drop { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
     .badge-tempo { background: rgba(34, 197, 94, 0.2); color: var(--success); border: 1px solid var(--success); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .badge-backoff { background: rgba(168, 85, 247, 0.2); color: var(--purple); border: 1px solid var(--purple); padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
+    .badge-sub { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; border: 1px solid #475569; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; }
 
     /* 구글 로그인 & 시트 자동 연동 바 */
     .sheet-sync-bar {
@@ -69,7 +73,7 @@
       justify-content: space-between;
       gap: 12px;
     }
-    .sync-left { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .sync-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .btn-google {
       background: #ffffff;
       color: #1f2937;
@@ -99,6 +103,20 @@
       gap: 6px;
     }
     .btn-sync-all:hover { background: #1d4ed8; }
+    .btn-fetch-meta {
+      background: #0d9488;
+      color: white;
+      border: none;
+      padding: 9px 14px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-fetch-meta:hover { background: #0f766e; }
     .sync-status {
       font-size: 0.85rem;
       display: inline-flex;
@@ -134,12 +152,122 @@
     }
     .day-meta-item { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; }
 
-    /* 운동 세트 테이블 */
+    /* 운동 세트 테이블 & 타이머 영역 */
     .ex-box { padding: 14px 16px; border-bottom: 1px solid var(--border); }
     .ex-box:last-child { border-bottom: none; }
     .ex-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+    .ex-name-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ex-name { font-size: 0.98rem; font-weight: 600; color: #fff; }
     .ex-meta { font-size: 0.8rem; color: var(--subtext); }
+
+    /* ⏱️ 운동별 휴식 타이머 바 (H열 연동) */
+    .ex-timer-bar {
+      background: rgba(11, 17, 32, 0.85);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin: 10px 0 12px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .timer-info-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .timer-title {
+      font-size: 0.82rem;
+      color: var(--subtext);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .timer-display {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #38bdf8;
+      background: rgba(0,0,0,0.4);
+      padding: 2px 10px;
+      border-radius: 6px;
+      border: 1px solid #1e293b;
+      min-width: 82px;
+      text-align: center;
+    }
+    .timer-display.running {
+      color: #22c55e;
+      border-color: #22c55e;
+      box-shadow: 0 0 10px rgba(34, 197, 94, 0.25);
+    }
+    .timer-display.done {
+      color: #ef4444;
+      border-color: #ef4444;
+      animation: pulse-done 1s infinite alternate;
+    }
+    @keyframes pulse-done {
+      from { transform: scale(1); opacity: 1; }
+      to { transform: scale(1.04); opacity: 0.8; }
+    }
+    .timer-status-pill {
+      font-size: 0.72rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: rgba(148, 163, 184, 0.15);
+      color: var(--subtext);
+      font-weight: 600;
+    }
+    .timer-status-pill.active {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--success);
+      border: 1px solid rgba(34, 197, 94, 0.4);
+    }
+    .timer-status-pill.finished {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .timer-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .btn-timer {
+      padding: 6px 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      border: none;
+      transition: 0.15s;
+    }
+    .btn-t-start { background: #0284c7; color: white; }
+    .btn-t-start:hover { background: #0369a1; }
+    .btn-t-pause { background: #475569; color: white; }
+    .btn-t-pause:hover { background: #334155; }
+    .btn-t-reset { background: #334155; color: #cbd5e1; }
+    .btn-t-reset:hover { background: #1e293b; color: white; }
+    .btn-t-add { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); }
+    .btn-t-add:hover { background: rgba(56, 189, 248, 0.25); }
+
+    .timer-gauge-track {
+      width: 100%;
+      height: 4px;
+      background: #1e293b;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .timer-gauge-fill {
+      height: 100%;
+      width: 100%;
+      background: #38bdf8;
+      transition: width 0.3s ease;
+    }
 
     .set-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
     .set-table th { background: rgba(0,0,0,0.3); color: var(--subtext); font-size: 0.78rem; padding: 6px 8px; text-align: center; border: 1px solid var(--border); }
@@ -148,6 +276,8 @@
     .set-table input.topset-input { border-color: var(--warning); background: rgba(245, 158, 11, 0.15); color: #fde047; font-weight: bold; }
     .set-vol { font-size: 0.85rem; color: var(--subtext); font-weight: 500; }
     .topset-badge-inline { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--warning); background: rgba(245, 158, 11, 0.1); border: 1px solid var(--warning); padding: 2px 6px; border-radius: 4px; }
+    .btn-quick-timer { background: transparent; border: 1px solid #475569; color: #38bdf8; padding: 3px 6px; border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
+    .btn-quick-timer:hover { background: rgba(56, 189, 248, 0.2); border-color: #38bdf8; }
 
     .guide-box { background: rgba(56, 189, 248, 0.08); border-left: 4px solid var(--accent); padding: 12px 14px; border-radius: 4px; margin-bottom: 14px; font-size: 0.88rem; line-height: 1.5; }
     .deload-box { background: rgba(34, 197, 94, 0.08); border-left: 4px solid var(--success); padding: 12px 14px; border-radius: 4px; margin-bottom: 14px; font-size: 0.88rem; line-height: 1.5; }
@@ -189,8 +319,8 @@
 
 <div class="container">
   <header>
-    <h1>🏋🏻‍♂️ 벌크업의 정석 트레이닝 센터</h1>
-    <p>1RM 탑세트 자동 연동 & 구글 스프레드시트 실시간 양방향 동기화</p>
+    <h1>🏋🏻‍♂️ 벌크업의 정석 트레이닝 & 칼로리 매니저</h1>
+    <p>1RM 탑세트 자동 연동 & H열 휴식 타이머 & S열 훈련법 실시간 구글 시트 양방향 동기화</p>
   </header>
 
   <!-- 🔗 구글 로그인 및 시트 실시간 동기화 바 -->
@@ -208,6 +338,10 @@
 
       <button id="btn-sync-all" class="btn-sync-all" style="display:none;" onclick="syncCurrentDayToSheetManually()">
         🔄 현재 일자 시트로 즉시 전송
+      </button>
+
+      <button id="btn-fetch-meta" class="btn-fetch-meta" style="display:none;" onclick="fetchStageMetadataFromSheet(true)">
+        📥 시트에서 타이머/루틴 최신화
       </button>
 
       <span id="sheet-link-wrapper" style="display:none;">
@@ -261,6 +395,11 @@
             <option value="day9">Day 9: 휴식 (Recovery)</option>
           </select>
 
+          <label style="display:inline-flex; align-items:center; gap:5px; font-size:0.8rem; color:#cbd5e1; cursor:pointer; margin-left:4px;">
+            <input type="checkbox" id="chk-auto-timer" style="width:auto; cursor:pointer;" checked>
+            세트입력 시 타이머 자동시작
+          </label>
+
           <button onclick="clearCurrentRecords()" style="background:#475569; color:#fff; border:none; padding:8px 12px; border-radius:6px; font-size:0.8rem; cursor:pointer;">기록 초기화</button>
         </div>
       </div>
@@ -281,7 +420,7 @@
     </div>
   </section>
 
-  <!-- TAB 2: 훈련 볼륨 / 체중변화 (신규 탭) -->
+  <!-- TAB 2: 훈련 볼륨 / 체중변화 -->
   <section id="tab-chart" class="tab-content">
     <div class="card">
       <div class="card-title-bar">
@@ -568,7 +707,172 @@
   const STAGE_LABELS = ["1단계", "2단계", "3단계", "4단계", "4.5단계", "5단계", "6단계", "7단계", "8단계", "8.5단계"];
 
   // ========================================================
-  // 2. 구글 OAuth 로그인 및 기존 시트 자동 검색/연동
+  // ⏱️ 2. 운동별 독립 타이머 상태 관리 및 비프 사운드 엔진
+  // ========================================================
+  const exerciseTimerMap = {}; // key: `${stage}_${dayId}_${exId}` -> { totalSec, remSec, timerId, isRunning }
+
+  function parseRestTimeToSeconds(text) {
+    if (!text) return 90;
+    const str = String(text).trim();
+    if (!isNaN(str) && Number(str) > 0) return parseInt(str, 10);
+
+    let total = 0;
+    const minMatch = str.match(/(\d+)\s*분/);
+    const secMatch = str.match(/(\d+)\s*초/);
+
+    if (minMatch) total += parseInt(minMatch[1], 10) * 60;
+    if (secMatch) total += parseInt(secMatch[1], 10);
+
+    if (total > 0) return total;
+    if (str.includes("30초~1분")) return 60;
+    return 90;
+  }
+
+  function formatTime(seconds) {
+    const s = Math.max(0, Math.floor(seconds));
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return `${String(m).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
+  }
+
+  function playTimerAlertSound() {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      
+      const playBeep = (freq, startTime, duration) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime + startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + startTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + startTime);
+        osc.stop(ctx.currentTime + startTime + duration);
+      };
+
+      // 3연속 비프음 (알림)
+      playBeep(880, 0, 0.15);
+      playBeep(880, 0.22, 0.15);
+      playBeep(1174.66, 0.44, 0.35); // D6 피치
+      
+      if (navigator.vibrate) {
+        navigator.vibrate([200, 100, 200, 100, 400]);
+      }
+    } catch (e) {
+      console.warn("오디오 재생 오류:", e);
+    }
+  }
+
+  function initOrGetTimerState(stage, dayId, exId, defaultSec) {
+    const key = `${stage}_${dayId}_${exId}`;
+    if (!exerciseTimerMap[key]) {
+      exerciseTimerMap[key] = {
+        totalSec: defaultSec,
+        remSec: defaultSec,
+        timerId: null,
+        isRunning: false
+      };
+    }
+    return exerciseTimerMap[key];
+  }
+
+  function startExerciseTimer(stage, dayId, exId, defaultSec = 90) {
+    const key = `${stage}_${dayId}_${exId}`;
+    const t = initOrGetTimerState(stage, dayId, exId, defaultSec);
+
+    if (t.isRunning) return;
+    if (t.remSec <= 0) {
+      t.remSec = t.totalSec;
+    }
+
+    t.isRunning = true;
+    updateTimerUI(stage, dayId, exId);
+
+    clearInterval(t.timerId);
+    t.timerId = setInterval(() => {
+      t.remSec--;
+      if (t.remSec <= 0) {
+        t.remSec = 0;
+        t.isRunning = false;
+        clearInterval(t.timerId);
+        playTimerAlertSound();
+      }
+      updateTimerUI(stage, dayId, exId);
+    }, 1000);
+  }
+
+  function pauseExerciseTimer(stage, dayId, exId) {
+    const key = `${stage}_${dayId}_${exId}`;
+    const t = exerciseTimerMap[key];
+    if (!t) return;
+    t.isRunning = false;
+    clearInterval(t.timerId);
+    updateTimerUI(stage, dayId, exId);
+  }
+
+  function resetExerciseTimer(stage, dayId, exId, defaultSec) {
+    const key = `${stage}_${dayId}_${exId}`;
+    const t = exerciseTimerMap[key];
+    if (t) {
+      t.isRunning = false;
+      clearInterval(t.timerId);
+      t.remSec = t.totalSec;
+      updateTimerUI(stage, dayId, exId);
+    }
+  }
+
+  function addExerciseTimerSeconds(stage, dayId, exId, addSec = 30) {
+    const key = `${stage}_${dayId}_${exId}`;
+    const t = exerciseTimerMap[key];
+    if (!t) return;
+    t.remSec += addSec;
+    if (t.remSec > t.totalSec) {
+      t.totalSec = t.remSec;
+    }
+    updateTimerUI(stage, dayId, exId);
+  }
+
+  function updateTimerUI(stage, dayId, exId) {
+    const key = `${stage}_${dayId}_${exId}`;
+    const t = exerciseTimerMap[key];
+    if (!t) return;
+
+    const displayEl = document.getElementById(`timer-display-${key}`);
+    const statusEl = document.getElementById(`timer-status-${key}`);
+    const gaugeEl = document.getElementById(`timer-gauge-${key}`);
+
+    if (!displayEl || !statusEl || !gaugeEl) return;
+
+    displayEl.innerText = formatTime(t.remSec);
+
+    displayEl.classList.remove('running', 'done');
+    statusEl.classList.remove('active', 'finished');
+
+    const pct = t.totalSec > 0 ? Math.max(0, Math.min(100, (t.remSec / t.totalSec) * 100)) : 0;
+    gaugeEl.style.width = pct + '%';
+
+    if (t.remSec === 0) {
+      displayEl.classList.add('done');
+      statusEl.classList.add('finished');
+      statusEl.innerText = '🔔 휴식 끝! 다음 세트 시작';
+      gaugeEl.style.background = '#ef4444';
+    } else if (t.isRunning) {
+      displayEl.classList.add('running');
+      statusEl.classList.add('active');
+      statusEl.innerText = '⏳ 휴식 진행 중...';
+      gaugeEl.style.background = '#22c55e';
+    } else {
+      statusEl.innerText = t.remSec < t.totalSec ? '⏸ 일시정지됨' : '대기';
+      gaugeEl.style.background = '#38bdf8';
+    }
+  }
+
+  // ========================================================
+  // 3. 구글 OAuth 로그인 및 기존 시트 자동 검색/연동
   // ========================================================
   function initGoogleAuth() {
     if (!window.google) return;
@@ -621,6 +925,8 @@
           showConnectedState(userSpreadsheetId);
           badge.innerHTML = '<span style="color:var(--success);">☁️ 기존 시트 자동 연동 완료!</span>';
           setTimeout(() => showConnectedState(userSpreadsheetId), 2000);
+          // H열 / S열 최신 메타데이터 가져오기
+          fetchStageMetadataFromSheet(false);
           return;
         }
       }
@@ -632,6 +938,7 @@
       createTemplateCopyInUserDrive();
     } else {
       showConnectedState(userSpreadsheetId);
+      fetchStageMetadataFromSheet(false);
     }
   }
 
@@ -655,6 +962,7 @@
           localStorage.setItem('bulk_user_sheet_id', userSpreadsheetId);
           showConnectedState(userSpreadsheetId);
           alert('🎉 내 구글 시트 연동이 완료되었습니다!\n이제 모든 기록이 내 시트로 실시간 저장됩니다.');
+          fetchStageMetadataFromSheet(false);
         } else {
           badge.innerHTML = '<span style="color:var(--danger);">⚠️ 올바른 스프레드시트 URL이 아닙니다.</span>';
         }
@@ -673,6 +981,7 @@
       document.getElementById('btn-google-text').innerText = 'Google 로그인 (시트 재연결)';
     }
     document.getElementById('btn-sync-all').style.display = 'inline-flex';
+    document.getElementById('btn-fetch-meta').style.display = 'inline-flex';
     const linkWrapper = document.getElementById('sheet-link-wrapper');
     const link = document.getElementById('user-sheet-link');
     link.href = `https://docs.google.com/spreadsheets/d/${sheetId}/edit`;
@@ -696,7 +1005,7 @@
   }
 
   // ========================================================
-  // 3. 주기화 단계 & 루틴 템플릿 정의
+  // 4. 주기화 단계 & 루틴 템플릿 정의
   // ========================================================
   const STAGE_CONFIG = {
     "1":   { pct: 0.65, topReps: "12~15회", topRIR: "RIR 0", subReps: "12~15회", subRIR: "RIR 3",   rest: "1분 30초", isDeload: false, desc: "근비대 기초 형성기 — 65% 중량으로 높은 반복수와 자극에 집중합니다." },
@@ -808,6 +1117,30 @@
     return 'other';
   }
 
+  // S열 훈련법 뱃지 생성 함수
+  function getTrainingBadgeHtml(trainingMethod, isDeload = false) {
+    if (isDeload) return '<span class="badge-tempo">템포 3-1-2</span>';
+    if (!trainingMethod) return '';
+
+    const clean = trainingMethod.trim();
+    if (clean.includes('탑') || clean.includes('Top')) {
+      return `<span class="badge-topset">🎯 ${clean}</span>`;
+    }
+    if (clean.includes('드롭') || clean.includes('Drop')) {
+      return `<span class="badge-drop">🔥 ${clean}</span>`;
+    }
+    if (clean.includes('백오프') || clean.includes('Back-off')) {
+      return `<span class="badge-backoff">🔄 ${clean}</span>`;
+    }
+    if (clean.includes('웜업') || clean.includes('선피로') || clean.includes('활성화')) {
+      return `<span class="badge-warmup">⚡ ${clean}</span>`;
+    }
+    if (clean.includes('템포')) {
+      return `<span class="badge-tempo">⏱️ ${clean}</span>`;
+    }
+    return `<span class="badge-sub">${clean}</span>`;
+  }
+
   function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -878,6 +1211,9 @@
     localStorage.setItem(`inp_${stage}_${dayId}_weight`, wVal);
   }
 
+  // ========================================================
+  // 5. 렌더링 엔진 (H열 타이머 바 & S열 훈련법 뱃지 통합)
+  // ========================================================
   function renderWorkout() {
     const stage = document.getElementById('stage-select').value;
     const selectedDay = document.getElementById('day-select').value;
@@ -910,7 +1246,6 @@
       const savedDate = localStorage.getItem(`inp_${stage}_${d.dayId}_date`) || new Date().toISOString().split('T')[0];
       const savedWeight = localStorage.getItem(`inp_${stage}_${d.dayId}_weight`) || '';
 
-      // (C열) 문구 삭제 반영
       const metaBarHtml = `
         <div class="day-meta-bar">
           <div class="day-meta-item">
@@ -965,27 +1300,52 @@
       `;
 
       d.exercises.forEach((ex) => {
+        const cleanName = ex.name.replace(/\s+/g, "");
+
+        // 1) S열(훈련법) 캐시 확인 (시트 연동값 우선)
+        const cachedMethod = localStorage.getItem(`sheet_meta_${stage}_${d.dayId}_${cleanName}_method`);
+        const finalMethod = cachedMethod || ex.type || (ex.isMain ? '탑세트' : '본세트');
+        const badgeHtml = getTrainingBadgeHtml(finalMethod, cfg.isDeload);
+
+        // 2) H열(휴식시간/타이머) 캐시 확인
+        const cachedRest = localStorage.getItem(`sheet_meta_${stage}_${d.dayId}_${cleanName}_rest`);
+        const restText = cachedRest || ex.rest || cfg.rest || "1분 30초";
+        const timerSeconds = parseRestTimeToSeconds(restText);
+
         const repsText = ex.isMain ? cfg.topReps : (ex.isDynamic ? cfg.subReps : ex.reps);
         const rirText = ex.isMain ? cfg.topRIR : (ex.isDynamic ? cfg.subRIR : ex.rir);
-        const restText = ex.rest ? ex.rest : cfg.rest;
 
-        let badgeHtml = '';
-        if (cfg.isDeload) {
-          badgeHtml = '<span class="badge-tempo">템포 3-1-2</span>';
-        } else if (ex.type === '탑세트') {
-          badgeHtml = '<span class="badge-topset">탑세트 (3세트)</span>';
-        } else if (ex.type === '웜업' || ex.type === '선피로' || ex.type === '활성화') {
-          badgeHtml = `<span class="badge-warmup">${ex.type}</span>`;
-        } else if (ex.type === '드롭세트') {
-          badgeHtml = '<span class="badge-drop">드롭세트</span>';
-        }
+        const timerKey = `${stage}_${d.dayId}_${ex.id}`;
+        initOrGetTimerState(stage, d.dayId, ex.id, timerSeconds);
 
         html += `
           <div class="ex-box">
             <div class="ex-title-row">
-              <span class="ex-name">${ex.name} ${badgeHtml}</span>
-              <span class="ex-meta">휴식: ${restText} | 목표: ${repsText} (${rirText})</span>
+              <div class="ex-name-wrap">
+                <span class="ex-name">${ex.name}</span>
+                ${badgeHtml}
+              </div>
+              <span class="ex-meta">권장 휴식: <strong>${restText}</strong> | 목표: ${repsText} (${rirText})</span>
             </div>
+
+            <!-- ⏱️ H열 휴식시간 연동 실시간 인터랙티브 타이머 바 -->
+            <div class="ex-timer-bar">
+              <div class="timer-info-group">
+                <span class="timer-title">⏱️ 휴식 타이머 (H열: ${restText}):</span>
+                <span class="timer-display" id="timer-display-${timerKey}">${formatTime(timerSeconds)}</span>
+                <span class="timer-status-pill" id="timer-status-${timerKey}">대기</span>
+              </div>
+              <div class="timer-btn-group">
+                <button class="btn-timer btn-t-start" onclick="startExerciseTimer('${stage}', '${d.dayId}', '${ex.id}', ${timerSeconds})">▶ 휴식 시작</button>
+                <button class="btn-timer btn-t-pause" onclick="pauseExerciseTimer('${stage}', '${d.dayId}', '${ex.id}')">⏸ 일시정지</button>
+                <button class="btn-timer btn-t-reset" onclick="resetExerciseTimer('${stage}', '${d.dayId}', '${ex.id}', ${timerSeconds})">🔄 리셋</button>
+                <button class="btn-timer btn-t-add" onclick="addExerciseTimerSeconds('${stage}', '${d.dayId}', '${ex.id}', 30)">+30초</button>
+              </div>
+              <div class="timer-gauge-track">
+                <div class="timer-gauge-fill" id="timer-gauge-${timerKey}" style="width: 100%;"></div>
+              </div>
+            </div>
+
             <table class="set-table">
               <thead>
                 <tr>
@@ -994,6 +1354,7 @@
                   <th>중량 (kg)</th>
                   <th>반복 (회)</th>
                   <th style="width: 80px;">세트 볼륨</th>
+                  <th style="width: 70px;">타이머</th>
                 </tr>
               </thead>
               <tbody>
@@ -1027,19 +1388,24 @@
           html += `
             <tr>
               <td><strong>${s}</strong></td>
-              <td>${rowBadge || '-'}</td>
+              <td>${rowBadge || (s + '세트')}</td>
               <td>
                 <input type="number" step="0.5" id="${inputIdW}" value="${savedW}" 
                   class="${isTopSetRow ? 'topset-input' : ''}" 
                   placeholder="${isTopSetRow ? topWeight : '직접입력'}"
-                  oninput="onSetInputChange('${d.dayId}', '${stage}', '${ex.name}', '${ex.id}', ${ex.sets})" />
+                  oninput="onSetInputChange('${d.dayId}', '${stage}', '${ex.name}', '${ex.id}', ${ex.sets}, ${timerSeconds})" />
               </td>
               <td>
                 <input type="number" step="1" id="${inputIdR}" value="${savedR}" 
                   placeholder="횟수" 
-                  oninput="onSetInputChange('${d.dayId}', '${stage}', '${ex.name}', '${ex.id}', ${ex.sets})" />
+                  oninput="onSetInputChange('${d.dayId}', '${stage}', '${ex.name}', '${ex.id}', ${ex.sets}, ${timerSeconds})" />
               </td>
               <td class="set-vol" id="vol_${stage}_${d.dayId}_${ex.id}_s${s}">0 kg</td>
+              <td>
+                <button class="btn-quick-timer" title="해당 세트 후 휴식 타이머 시작" onclick="startExerciseTimer('${stage}', '${d.dayId}', '${ex.id}', ${timerSeconds})">
+                  ⏱️ 시작
+                </button>
+              </td>
             </tr>
           `;
         }
@@ -1059,13 +1425,96 @@
   }
 
   // ========================================================
-  // 4. 구글 시트 양방향 실시간 동기화 엔진
+  // 6. 구글 시트 H열(타이머) & S열(훈련법) 메타데이터 일괄 로드
+  // ========================================================
+  async function fetchStageMetadataFromSheet(showFeedback = true) {
+    if (!gAccessToken || !userSpreadsheetId) {
+      if (showFeedback) alert("Google 로그인 후 스프레드시트가 연동되어 있어야 메타데이터를 불러올 수 있습니다.");
+      return;
+    }
+
+    const stage = document.getElementById('stage-select').value;
+    const stageSheetName = stage.includes("단계") ? stage : (stage + "단계");
+    const badge = document.getElementById('sync-status-badge');
+    badge.innerHTML = `<span style="color:var(--warning);">📥 [${stageSheetName}] H열 타이머 & S열 훈련법 로드 중...</span>`;
+
+    try {
+      const quotedSheet = encodeURIComponent(`'${stageSheetName}'`);
+      const getRes = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${userSpreadsheetId}/values/${quotedSheet}!A1:S100`,
+        { headers: { 'Authorization': `Bearer ${gAccessToken}` } }
+      );
+
+      if (!getRes.ok) throw new Error("시트 조회 실패");
+
+      const sheetData = await getRes.json();
+      const rows = sheetData.values || [];
+
+      let curDay = 0;
+      let matchedCount = 0;
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const colB = String(row[1] || '').trim();
+        const numMatch = colB.match(/\d+/);
+        if (numMatch) {
+          curDay = parseInt(numMatch[0], 10);
+        }
+
+        if (curDay > 0) {
+          const dayId = `day${curDay}`;
+          const colE = String(row[4] || '').replace(/\s+/g, "");
+          const colF = String(row[5] || '').replace(/\s+/g, "");
+          const colH = String(row[7] || '').trim();  // H열 (8번째): 휴식 시간 / 타이머
+          const colS = String(row[18] || '').trim(); // S열 (19번째): 훈련법
+
+          // E열 또는 F열의 종목명과 일치하는 항목 확인
+          if (colH || colS) {
+            const checkName = colE || colF;
+            if (checkName) {
+              if (colH) {
+                localStorage.setItem(`sheet_meta_${stage}_${dayId}_${checkName}_rest`, colH);
+              }
+              if (colS) {
+                localStorage.setItem(`sheet_meta_${stage}_${dayId}_${checkName}_method`, colS);
+              }
+              matchedCount++;
+            }
+          }
+        }
+      }
+
+      badge.innerHTML = `<span style="color:var(--success);">☁️ [${stageSheetName}] H열/S열 연동 완료 (${matchedCount}개 종목)</span>`;
+      renderWorkout();
+
+      if (showFeedback) {
+        alert(`🎉 [${stageSheetName}]의 H열 휴식 시간(타이머) 및 S열 훈련법 데이터 ${matchedCount}개를 불러와 화면에 동기화했습니다!`);
+      }
+      setTimeout(() => showConnectedState(userSpreadsheetId), 2500);
+
+    } catch (err) {
+      console.warn("메타데이터 가져오기 실패:", err);
+      badge.innerHTML = `<span style="color:var(--danger);">⚠️ 시트 메타데이터 조회 오류: ${err.message}</span>`;
+    }
+  }
+
+  // ========================================================
+  // 7. 구글 시트 양방향 실시간 동기화 엔진
   // ========================================================
   let syncDebounceTimer = null;
 
-  function onSetInputChange(dayId, stage, exName, exId, totalSets) {
+  function onSetInputChange(dayId, stage, exName, exId, totalSets, timerSeconds) {
     calculateAllVolumes(stage);
     saveInputsToStorage();
+
+    // 세트 입력 시 타이머 자동 시작 체크박스 확인
+    const autoTimerChk = document.getElementById('chk-auto-timer');
+    if (autoTimerChk && autoTimerChk.checked) {
+      const activeEl = document.activeElement;
+      if (activeEl && activeEl.id && activeEl.id.includes('_r') && activeEl.value) {
+        startExerciseTimer(stage, dayId, exId, timerSeconds);
+      }
+    }
 
     if (!userSpreadsheetId || !gAccessToken) return;
 
@@ -1086,7 +1535,7 @@
     }, 1200);
   }
 
-  // 4-1. 운동 기록을 해당 단계 시트에 저장 (B열=일차, E~F열=종목, K~R열=세트1~4)
+  // 운동 기록을 해당 단계 시트에 저장 (B열=일차, E~F열=종목, K~R열=세트1~4)
   async function syncWorkoutToGoogleSheets(stage, dayId, exName, setsData) {
     if (!checkAuthOrAlert()) return;
 
@@ -1100,7 +1549,7 @@
       const quotedSheet = encodeURIComponent(`'${stageSheetName}'`);
       
       const getRes = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${userSpreadsheetId}/values/${quotedSheet}!A1:F100`,
+        `https://sheets.googleapis.com/v4/spreadsheets/${userSpreadsheetId}/values/${quotedSheet}!A1:S100`,
         { headers: { 'Authorization': `Bearer ${gAccessToken}` } }
       );
 
@@ -1135,6 +1584,11 @@
             (colF && (colF.includes(cleanEx) || cleanEx.includes(colF)))
           ) {
             targetRow = i + 1;
+            // H열 / S열 최신값 캐싱 갱신
+            const colH = String(rows[i][7] || '').trim();
+            const colS = String(rows[i][18] || '').trim();
+            if (colH) localStorage.setItem(`sheet_meta_${stage}_${dayId}_${cleanEx}_rest`, colH);
+            if (colS) localStorage.setItem(`sheet_meta_${stage}_${dayId}_${cleanEx}_method`, colS);
             break;
           }
         }
@@ -1180,7 +1634,7 @@
     }
   }
 
-  // 4-2. C열 날짜 및 체중 시트 저장 함수
+  // C열 날짜 및 체중 시트 저장 함수
   async function syncDayMetaToGoogleSheet(stage, dayId) {
     if (!checkAuthOrAlert()) return;
     const mapping = DAY_META_ROW_MAP[dayId];
@@ -1206,7 +1660,7 @@
     }
   }
 
-  // 4-3. 칼로리 & 탄단지 설정값 시트에 저장
+  // 칼로리 & 탄단지 설정값 시트에 저장
   async function syncDietToGoogleSheet(dietData) {
     if (!checkAuthOrAlert()) return;
 
@@ -1288,7 +1742,7 @@
     }
   }
 
-  // 4-4. 1RM 값 시트에 저장
+  // 1RM 값 시트에 저장
   async function sync1RMToGoogleSheet(rms) {
     if (!checkAuthOrAlert()) return;
 
@@ -1359,7 +1813,7 @@
     }
   }
 
-  // 4-5. 현재 화면에 표시된 당일 일차 전체를 시트로 한 번에 수동 전송
+  // 현재 화면에 표시된 당일 일차 전체를 시트로 한 번에 수동 전송
   async function syncCurrentDayToSheetManually() {
     if (!checkAuthOrAlert()) return;
 
@@ -1399,7 +1853,7 @@
   }
 
   // ========================================================
-  // 5. 종합 훈련 볼륨 & 체중 변화 차트 엔진 (4개 차트 일괄 렌더링)
+  // 8. 종합 훈련 볼륨 & 체중 변화 차트 엔진
   // ========================================================
   let chartWeightInstance = null;
   let chartChestInstance = null;
@@ -1412,7 +1866,6 @@
     const stageBackVols = [];
     const stageLegVols = [];
 
-    // 단계별(1~8.5단계) 데이터 수집 및 집계
     STAGE_KEYS.forEach(stKey => {
       const cfg = STAGE_CONFIG[stKey];
       const template = cfg.isDeload ? DELOAD_TEMPLATE : ROUTINE_TEMPLATE;
@@ -1423,7 +1876,6 @@
       const recordedWeights = [];
 
       template.forEach(d => {
-        // 체중 데이터 수집
         const wVal = parseFloat(localStorage.getItem(`inp_${stKey}_${d.dayId}_weight`));
         if (!isNaN(wVal) && wVal > 0) {
           recordedWeights.push(wVal);
@@ -1431,7 +1883,6 @@
 
         if (d.isRest) return;
 
-        // 종목별 볼륨 집계
         d.exercises.forEach(ex => {
           const cat = getExerciseCategory(ex.name);
           let exVol = 0;
@@ -1447,7 +1898,6 @@
         });
       });
 
-      // 단계별 평균 체중 산출
       if (recordedWeights.length > 0) {
         const avgW = recordedWeights.reduce((a, b) => a + b, 0) / recordedWeights.length;
         stageWeights.push(parseFloat(avgW.toFixed(1)));
@@ -1460,7 +1910,6 @@
       stageLegVols.push(Math.round(legSum));
     });
 
-    // 단계별 누적 합계(Cumulative Sum) 산출
     const cumChestVols = [];
     const cumBackVols = [];
     const cumLegVols = [];
@@ -1475,7 +1924,6 @@
       cumLegVols.push(accL);
     }
 
-    // 1) 체중 변화 차트 (상단)
     const ctxWeight = document.getElementById('chartWeightTrend')?.getContext('2d');
     if (ctxWeight) {
       if (chartWeightInstance) chartWeightInstance.destroy();
@@ -1513,7 +1961,6 @@
       });
     }
 
-    // 2) 가슴 볼륨 차트 (단계별 볼륨 + 누적 볼륨 복합)
     const ctxChest = document.getElementById('chartChestVolume')?.getContext('2d');
     if (ctxChest) {
       if (chartChestInstance) chartChestInstance.destroy();
@@ -1549,7 +1996,6 @@
       });
     }
 
-    // 3) 등 볼륨 차트 (단계별 볼륨 + 누적 볼륨 복합)
     const ctxBack = document.getElementById('chartBackVolume')?.getContext('2d');
     if (ctxBack) {
       if (chartBackInstance) chartBackInstance.destroy();
@@ -1585,7 +2031,6 @@
       });
     }
 
-    // 4) 하체 볼륨 차트 (단계별 볼륨 + 누적 볼륨 복합)
     const ctxLeg = document.getElementById('chartLegVolume')?.getContext('2d');
     if (ctxLeg) {
       if (chartLegInstance) chartLegInstance.destroy();
@@ -1622,7 +2067,6 @@
     }
   }
 
-  // 부위별 차트 옵션 생성기
   function createVolumeChartOptions(barColor, lineColor) {
     return {
       responsive: true,
@@ -1649,7 +2093,7 @@
   }
 
   // ========================================================
-  // 6. 기록 초기화 및 스프레드시트 일괄 비우기 (K~R열 삭제)
+  // 9. 기록 초기화 및 스프레드시트 일괄 비우기 (K~R열 삭제)
   // ========================================================
   async function clearSheetWorkoutRanges(stageList) {
     if (!gAccessToken || !userSpreadsheetId) return;
@@ -1852,6 +2296,9 @@
   function onStageChange() {
     updateTopSetSummary();
     renderWorkout();
+    if (gAccessToken && userSpreadsheetId) {
+      fetchStageMetadataFromSheet(false);
+    }
   }
 
   function onDayChange() {
@@ -1886,9 +2333,14 @@
           setsData.push({ set: s, w, r: 0, isTop });
         }
       }
+
+      const cleanName = ex.name.replace(/\s+/g, "");
+      const cachedMethod = localStorage.getItem(`sheet_meta_${stage}_${dayId}_${cleanName}_method`);
+      const finalMethod = cachedMethod || ex.type || (ex.isMain ? '탑세트' : '본세트');
+
       exSummaries.push({
         name: ex.name,
-        type: ex.type,
+        type: finalMethod,
         isMain: ex.isMain,
         sets: setsData
       });
