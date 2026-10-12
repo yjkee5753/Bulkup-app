@@ -24,7 +24,7 @@
       --input-bg: #0b1120;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 14px; padding-bottom: 90px; line-height: 1.5; }
+    body { background: var(--bg); color: var(--text); padding: 14px; line-height: 1.5; }
     .container { max-width: 1040px; margin: 0 auto; }
     header { text-align: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
     header h1 { font-size: 1.7rem; color: var(--accent); margin-bottom: 4px; }
@@ -134,29 +134,12 @@
     }
     .day-meta-item { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; }
 
-    /* 운동 세트 테이블 & 타이머 버튼 */
+    /* 운동 세트 테이블 */
     .ex-box { padding: 14px 16px; border-bottom: 1px solid var(--border); }
     .ex-box:last-child { border-bottom: none; }
     .ex-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
-    .ex-title-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .ex-name { font-size: 0.98rem; font-weight: 600; color: #fff; }
     .ex-meta { font-size: 0.8rem; color: var(--subtext); }
-
-    .btn-rest-trigger {
-      background: rgba(56, 189, 248, 0.15);
-      border: 1px solid var(--accent);
-      color: var(--accent);
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      transition: 0.2s;
-    }
-    .btn-rest-trigger:hover { background: var(--accent); color: #0f172a; }
 
     .set-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
     .set-table th { background: rgba(0,0,0,0.3); color: var(--subtext); font-size: 0.78rem; padding: 6px 8px; text-align: center; border: 1px solid var(--border); }
@@ -169,6 +152,7 @@
     .guide-box { background: rgba(56, 189, 248, 0.08); border-left: 4px solid var(--accent); padding: 12px 14px; border-radius: 4px; margin-bottom: 14px; font-size: 0.88rem; line-height: 1.5; }
     .deload-box { background: rgba(34, 197, 94, 0.08); border-left: 4px solid var(--success); padding: 12px 14px; border-radius: 4px; margin-bottom: 14px; font-size: 0.88rem; line-height: 1.5; }
 
+    /* 차트 박스 컨테이너 */
     .chart-card-box {
       background: rgba(15, 23, 42, 0.8);
       border: 1px solid var(--border);
@@ -176,46 +160,19 @@
       padding: 16px;
       margin-bottom: 18px;
     }
-    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 6px; }
-    .chart-wrapper { position: relative; height: 230px; width: 100%; }
-
-    /* ⏱️ 하단 고정 플로팅 휴식 타이머 바 */
-    .rest-timer-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: rgba(15, 23, 42, 0.96);
-      backdrop-filter: blur(8px);
-      border-top: 2px solid var(--accent);
-      padding: 12px 20px;
-      box-shadow: 0 -8px 25px rgba(0,0,0,0.6);
-      z-index: 999;
-      display: none;
-      align-items: center;
+    .chart-header {
+      display: flex;
       justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 6px;
     }
-    .rest-timer-bar.active { display: flex; }
-    .timer-info { display: flex; align-items: center; gap: 14px; }
-    .timer-clock { font-size: 1.9rem; font-weight: 800; font-family: monospace; color: var(--accent); letter-spacing: 1px; min-width: 90px; }
-    .timer-name { font-size: 0.88rem; color: #fff; font-weight: 600; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .timer-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .timer-btn {
-      background: #334155;
-      color: #fff;
-      border: 1px solid var(--border);
-      padding: 7px 12px;
-      border-radius: 6px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.2s;
+    .chart-wrapper {
+      position: relative;
+      height: 230px;
+      width: 100%;
     }
-    .timer-btn:hover { background: #475569; }
-    .timer-btn-skip { background: #dc2626; border-color: #ef4444; color: #fff; }
-    .timer-btn-skip:hover { background: #b91c1c; }
 
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 1000; justify-content: center; align-items: center; padding: 16px; }
     .modal-overlay.active { display: flex; }
@@ -324,7 +281,7 @@
     </div>
   </section>
 
-  <!-- TAB 2: 훈련 볼륨 / 체중변화 -->
+  <!-- TAB 2: 훈련 볼륨 / 체중변화 (신규 탭) -->
   <section id="tab-chart" class="tab-content">
     <div class="card">
       <div class="card-title-bar">
@@ -565,22 +522,6 @@
   </section>
 </div>
 
-<!-- ⏱️ 하단 고정 플로팅 휴식 타이머 바 -->
-<div id="restTimerBar" class="rest-timer-bar">
-  <div class="timer-info">
-    <div class="timer-clock" id="timerDisplay">00:00</div>
-    <div>
-      <div class="timer-name" id="timerExName">운동 종목 휴식 중</div>
-      <div style="font-size:0.75rem; color:var(--accent);">호흡을 가다듬고 세트를 준비하세요</div>
-    </div>
-  </div>
-  <div class="timer-controls">
-    <button class="timer-btn" onclick="adjustRestTimer(-10)">-10초</button>
-    <button class="timer-btn" onclick="adjustRestTimer(30)">+30초</button>
-    <button class="timer-btn timer-btn-skip" onclick="stopRestTimer()">스킵 / 완료</button>
-  </div>
-</div>
-
 <!-- 사진 출력 모달 -->
 <div id="imageModal" class="modal-overlay" onclick="closeImageModal(event)">
   <div class="modal-content" onclick="event.stopPropagation()">
@@ -641,6 +582,8 @@
         }
         gAccessToken = resp.access_token;
         sessionStorage.setItem('bulk_g_access_token', gAccessToken);
+
+        // 타 기기 접속 시 기존 벌크업 시트 우선 검색
         await findOrCreateUserSheet();
       }
     });
@@ -752,7 +695,105 @@
     return true;
   }
 
-  // 운동 종목 부위 분류 함수
+  // ========================================================
+  // 3. 주기화 단계 & 루틴 템플릿 정의
+  // ========================================================
+  const STAGE_CONFIG = {
+    "1":   { pct: 0.65, topReps: "12~15회", topRIR: "RIR 0", subReps: "12~15회", subRIR: "RIR 3",   rest: "1분 30초", isDeload: false, desc: "근비대 기초 형성기 — 65% 중량으로 높은 반복수와 자극에 집중합니다." },
+    "2":   { pct: 0.70, topReps: "8~11회",  topRIR: "RIR 0", subReps: "8~11회",  subRIR: "RIR 2.5", rest: "2분",      isDeload: false, desc: "중중량 근비대 적응기 — 70% 중량으로 전환하며 세트 간 휴식을 2분으로 확보합니다." },
+    "3":   { pct: 0.80, topReps: "6~8회",   topRIR: "RIR 0", subReps: "6~8회",   subRIR: "RIR 2",   rest: "2분 30초", isDeload: false, desc: "스트렝스 전환기 — 80% 고중량으로 진입하며 집중력을 극대화합니다." },
+    "4":   { pct: 0.90, topReps: "3~5회",   topRIR: "RIR 0", subReps: "4~6회",   subRIR: "RIR 1",   rest: "3분",      isDeload: false, desc: "최대 근력 피킹 — 90% 한계 중량에 도전하는 최고 강도 구간입니다." },
+    "4.5": { pct: 0.50, topReps: "8~10회",  topRIR: "RIR 4", subReps: "8~10회",  subRIR: "RIR 4",   rest: "1분 30초", isDeload: true,  desc: "신경계 및 관절 회복 디로딩 — 50% 중량과 3초 이완 / 1초 정지 / 2초 수축 템포로 회복합니다." },
+    "5":   { pct: 0.65, topReps: "12~15회", topRIR: "RIR 0", subReps: "12~15회", subRIR: "RIR 3",   rest: "1분 30초", isDeload: false, desc: "2주기 과부하 검증 1 — 1단계와 비교하여 반복수 및 총 볼륨 증가를 확인합니다." },
+    "6":   { pct: 0.70, topReps: "8~11회",  topRIR: "RIR 0", subReps: "8~11회",  subRIR: "RIR 2.5", rest: "2분",      isDeload: false, desc: "2주기 과부하 검증 2 — 2단계 대비 중량 및 볼륨 증가를 확인합니다." },
+    "7":   { pct: 0.80, topReps: "6~8회",   topRIR: "RIR 0", subReps: "6~8회",   subRIR: "RIR 2",   rest: "2분 30초", isDeload: false, desc: "2주기 과부하 검증 3 — 3단계 대비 80% 스트렝스 성장을 확인합니다." },
+    "8":   { pct: 0.90, topReps: "3~5회",   topRIR: "RIR 0", subReps: "4~6회",   subRIR: "RIR 1",   rest: "3분",      isDeload: false, desc: "2주기 최고 중량 피킹 — 4단계 기록 경신을 목표로 합니다." },
+    "8.5": { pct: 0.50, topReps: "8~10회",  topRIR: "RIR 4", subReps: "8~10회",  subRIR: "RIR 4",   rest: "1분 30초", isDeload: true,  desc: "프로그램 완료 최종 디로딩 — 피로 누적 해소 및 컨디셔닝 회복." }
+  };
+
+  const ROUTINE_TEMPLATE = [
+    {
+      dayId: "day1", dayTitle: "Day 1: 밀기 (가슴 / 삼두 / 어깨)",
+      exercises: [
+        { id: "p1_warm", name: "인클라인 덤벨 플라이", sets: 2, isMain: false, rest: "30초~1분", reps: "15~20회", rir: "RIR 5", type: "웜업" },
+        { id: "p1_main", name: "인클라인 벤치프레스", sets: 4, isMain: true, mainKey: "bench", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
+        { id: "p1_sub1", name: "체스트 프레스 머신", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p1_sub2", name: "체스트 플라이 머신", sets: 3, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p1_sub3", name: "트라이셉스 푸쉬다운", sets: 3, isMain: false, reps: "10~12회", rir: "RIR 1", rest: "1분", type: "드롭세트" },
+        { id: "p1_sub4", name: "머신 숄더 프레스", sets: 3, isMain: false, isDynamic: true, type: "본세트" }
+      ]
+    },
+    {
+      dayId: "day2", dayTitle: "Day 2: 당기기 (등 / 이두 / 후면삼각근)",
+      exercises: [
+        { id: "p2_warm", name: "케이블 암풀다운", sets: 4, isMain: false, rest: "1분", reps: "12~15회", rir: "RIR 3", type: "선피로" },
+        { id: "p2_main", name: "바벨로우", sets: 4, isMain: true, mainKey: "row", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
+        { id: "p2_sub1", name: "어시스트 풀업", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p2_sub2", name: "시티드 로우", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p2_sub3", name: "바벨 컬", sets: 3, isMain: false, reps: "10~12회", rir: "RIR 1", rest: "1분", type: "드롭세트" },
+        { id: "p2_sub4", name: "리어 델트 플라이", sets: 3, isMain: false, reps: "12~15회", rir: "RIR 0", rest: "1분", type: "후면" }
+      ]
+    },
+    { dayId: "day3", dayTitle: "Day 3: 휴식 (Recovery)", isRest: true },
+    {
+      dayId: "day4", dayTitle: "Day 4: 하체 & 코어 (스쿼트)",
+      exercises: [
+        { id: "p4_warm", name: "이너 타이 (내전근)", sets: 3, isMain: false, rest: "1분 30초", isDynamic: true, type: "활성화" },
+        { id: "p4_main", name: "바벨 스쿼트", sets: 4, isMain: true, mainKey: "squat", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
+        { id: "p4_sub1", name: "레그 프레스", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p4_sub2", name: "레그 컬", sets: 4, isMain: false, rest: "1분 30초", reps: "10~12회", rir: "RIR 2.5", type: "본세트" },
+        { id: "p4_sub3", name: "윗몸 일으키기", sets: 5, isMain: false, rest: "1분", reps: "최대 반복", rir: "실패지점", type: "코어" }
+      ]
+    },
+    {
+      dayId: "day5", dayTitle: "Day 5: 밀기 (가슴 / 삼두 / 어깨)",
+      exercises: [
+        { id: "p5_warm", name: "인클라인 덤벨 플라이", sets: 2, isMain: false, rest: "30초~1분", reps: "15~20회", rir: "RIR 5", type: "웜업" },
+        { id: "p5_main", name: "인클라인 벤치프레스", sets: 4, isMain: true, mainKey: "bench", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
+        { id: "p5_sub1", name: "체스트 프레스 머신", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p5_sub2", name: "체스트 플라이 머신", sets: 3, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p5_sub3", name: "트라이셉스 푸쉬다운", sets: 3, isMain: false, reps: "10~12회", rir: "RIR 1", rest: "1분", type: "드롭세트" },
+        { id: "p5_sub4", name: "머신 숄더 프레스", sets: 3, isMain: false, isDynamic: true, type: "본세트" }
+      ]
+    },
+    { dayId: "day6", dayTitle: "Day 6: 휴식 (Recovery)", isRest: true },
+    {
+      dayId: "day7", dayTitle: "Day 7: 당기기 (등 / 이두 / 후면삼각근)",
+      exercises: [
+        { id: "p7_warm", name: "케이블 암풀다운", sets: 4, isMain: false, rest: "1분", reps: "12~15회", rir: "RIR 3", type: "선피로" },
+        { id: "p7_main", name: "바벨로우", sets: 4, isMain: true, mainKey: "row", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
+        { id: "p7_sub1", name: "어시스트 풀업", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p7_sub2", name: "시티드 로우", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p7_sub3", name: "바벨 컬", sets: 3, isMain: false, reps: "10~12회", rir: "RIR 1", rest: "1분", type: "드롭세트" },
+        { id: "p7_sub4", name: "리어 델트 플라이", sets: 3, isMain: false, reps: "12~15회", rir: "RIR 0", rest: "1분", type: "후면" }
+      ]
+    },
+    {
+      dayId: "day8", dayTitle: "Day 8: 하체 & 코어 (스쿼트)",
+      exercises: [
+        { id: "p8_warm", name: "이너 타이 (내전근)", sets: 3, isMain: false, rest: "1분 30초", isDynamic: true, type: "활성화" },
+        { id: "p8_main", name: "바벨 스쿼트", sets: 4, isMain: true, mainKey: "squat", rest: "3분", reps: "최대 반복", rir: "RIR 0", type: "탑세트" },
+        { id: "p8_sub1", name: "레그 프레스", sets: 4, isMain: false, isDynamic: true, type: "본세트" },
+        { id: "p8_sub2", name: "레그 컬", sets: 4, isMain: false, rest: "1분 30초", reps: "10~12회", rir: "RIR 2.5", type: "본세트" },
+        { id: "p8_sub3", name: "윗몸 일으키기", sets: 5, isMain: false, rest: "1분", reps: "최대 반복", rir: "실패지점", type: "코어" }
+      ]
+    },
+    { dayId: "day9", dayTitle: "Day 9: 휴식 (Recovery)", isRest: true }
+  ];
+
+  const DELOAD_TEMPLATE = [
+    { dayId: "day1", dayTitle: "Day 1: 가슴 템포 디로딩", exercises: [{ id: "dl1_main", name: "인클라인 벤치프레스", sets: 4, isMain: true, mainKey: "bench", rest: "1분 30초", reps: "8~10회", rir: "RIR 4", type: "템포 디로딩" }] },
+    { dayId: "day2", dayTitle: "Day 2: 등 템포 디로딩", exercises: [{ id: "dl2_main", name: "바벨로우", sets: 4, isMain: true, mainKey: "row", rest: "1분 30초", reps: "8~10회", rir: "RIR 4", type: "템포 디로딩" }] },
+    { dayId: "day3", dayTitle: "Day 3: 휴식 (Recovery)", isRest: true },
+    { dayId: "day4", dayTitle: "Day 4: 하체 템포 디로딩", exercises: [{ id: "dl4_main", name: "바벨 스쿼트", sets: 4, isMain: true, mainKey: "squat", rest: "1분 30초", reps: "8~10회", rir: "RIR 4", type: "템포 디로딩" }] },
+    { dayId: "day5", dayTitle: "Day 5: 가슴 템포 디로딩", exercises: [{ id: "dl5_main", name: "인클라인 벤치프레스", sets: 4, isMain: true, mainKey: "bench", rest: "1분 30초", reps: "8~10회", rir: "RIR 4", type: "템포 디로딩" }] },
+    { dayId: "day6", dayTitle: "Day 6: 휴식 (Recovery)", isRest: true },
+    { dayId: "day7", dayTitle: "Day 7: 등 템포 디로딩", exercises: [{ id: "dl7_main", name: "바벨로우", sets: 4, isMain: true, mainKey: "row", rest: "1분 30초", reps: "8~10회", rir: "RIR 4", type: "템포 디로딩" }] },
+    { dayId: "day8", dayTitle: "Day 8: 하체 템포 디로딩", exercises: [{ id: "dl8_main", name: "바벨 스쿼트", sets: 4, isMain: true, mainKey: "squat", rest: "1분 30초", reps: "8~10회", rir: "RIR 4", type: "템포 디로딩" }] },
+    { dayId: "day9", dayTitle: "Day 9: 휴식 (Recovery)", isRest: true }
+  ];
+
+  // 운동 종목 부위 분류 함수 (가슴, 등, 하체 판별)
   function getExerciseCategory(name) {
     const clean = name.replace(/\s+/g, '');
     if (clean.includes('플라이') || clean.includes('벤치') || clean.includes('체스트')) {
@@ -765,109 +806,6 @@
       return 'leg';
     }
     return 'other';
-  }
-
-  // ========================================================
-  // 3. ⏱️ 휴식 타이머 엔진 (Audio 비프음 & 모바일 진동)
-  // ========================================================
-  let timerInterval = null;
-  let timerRemainingSeconds = 0;
-  let audioCtx = null;
-
-  function parseRestTimeToSeconds(text) {
-    if (!text) return 90;
-    const str = String(text);
-    let total = 0;
-    const m = str.match(/(\d+)\s*분/);
-    const s = str.match(/(\d+)\s*초/);
-    if (m) total += parseInt(m[1], 10) * 60;
-    if (s) total += parseInt(s[1], 10);
-    return total > 0 ? total : 90;
-  }
-
-  function startRestTimerFromText(restText, exName) {
-    const seconds = parseRestTimeToSeconds(restText);
-    startRestTimer(seconds, exName);
-  }
-
-  function startRestTimer(seconds, exName) {
-    clearInterval(timerInterval);
-    timerRemainingSeconds = seconds;
-
-    const bar = document.getElementById('restTimerBar');
-    const nameEl = document.getElementById('timerExName');
-    if (bar) bar.classList.add('active');
-    if (nameEl) nameEl.innerText = `${exName} 휴식 중`;
-
-    updateTimerDisplay();
-
-    try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-    } catch (e) {}
-
-    timerInterval = setInterval(() => {
-      timerRemainingSeconds--;
-      updateTimerDisplay();
-
-      if (timerRemainingSeconds <= 0) {
-        clearInterval(timerInterval);
-        onTimerComplete(exName);
-      }
-    }, 1000);
-  }
-
-  function adjustRestTimer(delta) {
-    timerRemainingSeconds += delta;
-    if (timerRemainingSeconds < 0) timerRemainingSeconds = 0;
-    updateTimerDisplay();
-  }
-
-  function stopRestTimer() {
-    clearInterval(timerInterval);
-    const bar = document.getElementById('restTimerBar');
-    if (bar) bar.classList.remove('active');
-  }
-
-  function updateTimerDisplay() {
-    const disp = document.getElementById('timerDisplay');
-    if (!disp) return;
-    const min = Math.floor(timerRemainingSeconds / 60);
-    const sec = timerRemainingSeconds % 60;
-    disp.innerText = `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
-  }
-
-  function onTimerComplete(exName) {
-    playTimerBeep();
-    if (navigator.vibrate) {
-      navigator.vibrate([250, 150, 250, 150, 400]);
-    }
-    const nameEl = document.getElementById('timerExName');
-    if (nameEl) nameEl.innerText = `🔔 ${exName} 휴식 종료! 다음 세트 시작!`;
-    setTimeout(stopRestTimer, 5000);
-  }
-
-  function playTimerBeep() {
-    try {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const beeps = [
-        { f: 880, start: 0, dur: 0.15 },
-        { f: 880, start: 0.25, dur: 0.15 },
-        { f: 1174, start: 0.5, dur: 0.35 }
-      ];
-      beeps.forEach(b => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.frequency.value = b.f;
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        const t = audioCtx.currentTime + b.start;
-        gain.gain.setValueAtTime(0.3, t);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t + b.dur);
-        osc.start(t);
-        osc.stop(t + b.dur);
-      });
-    } catch (e) {}
   }
 
   function switchTab(tabId) {
@@ -932,6 +870,7 @@
     document.getElementById('bar-squat-w').innerText = getStageTopWeight('squat') + ' kg';
   }
 
+  // 날짜 & 체중 메타 정보 로컬 저장
   function saveDayMeta(stage, dayId) {
     const dVal = document.getElementById(`inp_${stage}_${dayId}_date`)?.value || '';
     const wVal = document.getElementById(`inp_${stage}_${dayId}_weight`)?.value || '';
@@ -969,9 +908,9 @@
       if (d.dayId !== selectedDay) return;
 
       const savedDate = localStorage.getItem(`inp_${stage}_${d.dayId}_date`) || new Date().toISOString().split('T')[0];
-      // [수정 완료]: d.dayId 로 정상 참조
       const savedWeight = localStorage.getItem(`inp_${stage}_${d.dayId}_weight`) || '';
 
+      // (C열) 문구 삭제 반영
       const metaBarHtml = `
         <div class="day-meta-bar">
           <div class="day-meta-item">
@@ -1044,12 +983,7 @@
         html += `
           <div class="ex-box">
             <div class="ex-title-row">
-              <div class="ex-title-left">
-                <span class="ex-name">${ex.name} ${badgeHtml}</span>
-                <button class="btn-rest-trigger" onclick="startRestTimerFromText('${restText}', '${ex.name}')">
-                  ⏱️ 휴식 시작 (${restText})
-                </button>
-              </div>
+              <span class="ex-name">${ex.name} ${badgeHtml}</span>
               <span class="ex-meta">휴식: ${restText} | 목표: ${repsText} (${rirText})</span>
             </div>
             <table class="set-table">
@@ -1440,8 +1374,10 @@
     const badge = document.getElementById('sync-status-badge');
     badge.innerHTML = `<span style="color:var(--warning);">🔄 [${selectedDay}] 전체 데이터 시트 전송 중...</span>`;
 
+    // 1) C열 날짜 및 체중 전송
     await syncDayMetaToGoogleSheet(stage, selectedDay);
 
+    // 2) 휴식일이 아닐 경우 운동 세트 데이터 전송
     if (!d.isRest) {
       for (let ex of d.exercises) {
         const setsData = [];
@@ -1476,6 +1412,7 @@
     const stageBackVols = [];
     const stageLegVols = [];
 
+    // 단계별(1~8.5단계) 데이터 수집 및 집계
     STAGE_KEYS.forEach(stKey => {
       const cfg = STAGE_CONFIG[stKey];
       const template = cfg.isDeload ? DELOAD_TEMPLATE : ROUTINE_TEMPLATE;
@@ -1486,6 +1423,7 @@
       const recordedWeights = [];
 
       template.forEach(d => {
+        // 체중 데이터 수집
         const wVal = parseFloat(localStorage.getItem(`inp_${stKey}_${d.dayId}_weight`));
         if (!isNaN(wVal) && wVal > 0) {
           recordedWeights.push(wVal);
@@ -1493,6 +1431,7 @@
 
         if (d.isRest) return;
 
+        // 종목별 볼륨 집계
         d.exercises.forEach(ex => {
           const cat = getExerciseCategory(ex.name);
           let exVol = 0;
@@ -1508,6 +1447,7 @@
         });
       });
 
+      // 단계별 평균 체중 산출
       if (recordedWeights.length > 0) {
         const avgW = recordedWeights.reduce((a, b) => a + b, 0) / recordedWeights.length;
         stageWeights.push(parseFloat(avgW.toFixed(1)));
@@ -1520,6 +1460,7 @@
       stageLegVols.push(Math.round(legSum));
     });
 
+    // 단계별 누적 합계(Cumulative Sum) 산출
     const cumChestVols = [];
     const cumBackVols = [];
     const cumLegVols = [];
@@ -1534,7 +1475,7 @@
       cumLegVols.push(accL);
     }
 
-    // 1) 체중 변화 차트
+    // 1) 체중 변화 차트 (상단)
     const ctxWeight = document.getElementById('chartWeightTrend')?.getContext('2d');
     if (ctxWeight) {
       if (chartWeightInstance) chartWeightInstance.destroy();
@@ -1572,12 +1513,11 @@
       });
     }
 
-    // 2) 가슴 볼륨 차트
+    // 2) 가슴 볼륨 차트 (단계별 볼륨 + 누적 볼륨 복합)
     const ctxChest = document.getElementById('chartChestVolume')?.getContext('2d');
     if (ctxChest) {
       if (chartChestInstance) chartChestInstance.destroy();
       chartChestInstance = new Chart(ctxChest, {
-        type: 'bar',
         data: {
           labels: STAGE_LABELS,
           datasets: [
@@ -1609,12 +1549,11 @@
       });
     }
 
-    // 3) 등 볼륨 차트
+    // 3) 등 볼륨 차트 (단계별 볼륨 + 누적 볼륨 복합)
     const ctxBack = document.getElementById('chartBackVolume')?.getContext('2d');
     if (ctxBack) {
       if (chartBackInstance) chartBackInstance.destroy();
       chartBackInstance = new Chart(ctxBack, {
-        type: 'bar',
         data: {
           labels: STAGE_LABELS,
           datasets: [
@@ -1646,12 +1585,11 @@
       });
     }
 
-    // 4) 하체 볼륨 차트
+    // 4) 하체 볼륨 차트 (단계별 볼륨 + 누적 볼륨 복합)
     const ctxLeg = document.getElementById('chartLegVolume')?.getContext('2d');
     if (ctxLeg) {
       if (chartLegInstance) chartLegInstance.destroy();
       chartLegInstance = new Chart(ctxLeg, {
-        type: 'bar',
         data: {
           labels: STAGE_LABELS,
           datasets: [
@@ -1684,6 +1622,7 @@
     }
   }
 
+  // 부위별 차트 옵션 생성기
   function createVolumeChartOptions(barColor, lineColor) {
     return {
       responsive: true,
