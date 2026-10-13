@@ -410,9 +410,9 @@
       <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px;">
         <div>🎯 <strong>현재 단계 3세트 탑세트 연동 중량:</strong></div>
         <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <span>인클라인 벤치: <strong id="bar-bench-w" style="color:var(--warning);">46.0 kg</strong></span>
-          <span>바벨로우: <strong id="bar-row-w" style="color:var(--warning);">39.0 kg</strong></span>
-          <span>바벨 스쿼트: <strong id="bar-squat-w" style="color:var(--warning);">97.5 kg</strong></span>
+          <span>인클라인 벤치: <strong id="bar-bench-w" style="color:var(--warning);">45 kg</strong></span>
+          <span>바벨로우: <strong id="bar-row-w" style="color:var(--warning);">40 kg</strong></span>
+          <span>바벨 스쿼트: <strong id="bar-squat-w" style="color:var(--warning);">100 kg</strong></span>
         </div>
       </div>
 
@@ -1166,6 +1166,12 @@
     return (Math.round(w * 2) / 2).toFixed(1);
   }
 
+  // 탑세트 중량 5kg 단위 반올림 함수 (39 -> 40, 36 -> 35 등)
+  function roundTo5(w) {
+    if (w === undefined || w === null || isNaN(w)) return 0;
+    return Math.round(Number(w) / 5) * 5;
+  }
+
   function get1RM() {
     return {
       bench: parseFloat(document.getElementById('rm-bench').value) || 71,
@@ -1178,7 +1184,7 @@
     const stage = document.getElementById('stage-select').value;
     const cfg = STAGE_CONFIG[stage] || STAGE_CONFIG["1"];
     const rms = get1RM();
-    return roundWeight((rms[key] || 0) * cfg.pct);
+    return roundTo5((rms[key] || 0) * cfg.pct);
   }
 
   function updateTopSetSummary() {
@@ -1193,9 +1199,9 @@
           <td style="padding: 8px; border: 1px solid var(--border);"><strong>${k}단계 ${isDel ? '(디로딩)' : ''}</strong></td>
           <td style="padding: 8px; border: 1px solid var(--border);">${Math.round(c.pct * 100)}%</td>
           <td style="padding: 8px; border: 1px solid var(--border);">${c.topReps}</td>
-          <td style="padding: 8px; border: 1px solid var(--border); font-weight: bold; color: var(--accent);">${roundWeight(rms.bench * c.pct)} kg</td>
-          <td style="padding: 8px; border: 1px solid var(--border); font-weight: bold; color: var(--accent);">${roundWeight(rms.row * c.pct)} kg</td>
-          <td style="padding: 8px; border: 1px solid var(--border); font-weight: bold; color: var(--accent);">${roundWeight(rms.squat * c.pct)} kg</td>
+          <td style="padding: 8px; border: 1px solid var(--border); font-weight: bold; color: var(--accent);">${roundTo5(rms.bench * c.pct)} kg</td>
+          <td style="padding: 8px; border: 1px solid var(--border); font-weight: bold; color: var(--accent);">${roundTo5(rms.row * c.pct)} kg</td>
+          <td style="padding: 8px; border: 1px solid var(--border); font-weight: bold; color: var(--accent);">${roundTo5(rms.squat * c.pct)} kg</td>
         </tr>
       `;
     });
@@ -1211,6 +1217,7 @@
     const wVal = document.getElementById(`inp_${stage}_${dayId}_weight`)?.value || '';
     localStorage.setItem(`inp_${stage}_${dayId}_date`, dVal);
     localStorage.setItem(`inp_${stage}_${dayId}_weight`, wVal);
+    calculateAllVolumes(stage);
   }
 
   // ========================================================
@@ -1319,9 +1326,12 @@
 
         const repsText = ex.isMain ? cfg.topReps : (ex.isDynamic ? cfg.subReps : ex.reps);
         const rirText = ex.isMain ? cfg.topRIR : (ex.isDynamic ? cfg.subRIR : ex.rir);
+        const isAssistPullup = ex.name.replace(/\s+/g, '').includes('어시스트풀업');
 
         const timerKey = `${stage}_${d.dayId}_${ex.id}`;
         initOrGetTimerState(stage, d.dayId, ex.id, timerSeconds);
+
+        const pullupVolNotice = isAssistPullup ? ' | <span style="color:var(--accent); font-weight:600;">💡 볼륨 = (체중 - 보조무게) × 횟수</span>' : '';
 
         html += `
           <div class="ex-box">
@@ -1330,7 +1340,7 @@
                 <span class="ex-name">${ex.name}</span>
                 ${badgeHtml}
               </div>
-              <span class="ex-meta">권장 휴식: <strong>${restText}</strong> | 목표: ${repsText} (${rirText})</span>
+              <span class="ex-meta">권장 휴식: <strong>${restText}</strong> | 목표: ${repsText} (${rirText})${pullupVolNotice}</span>
             </div>
 
             <!-- ⏱️ H열 휴식시간 연동 실시간 인터랙티브 타이머 바 -->
@@ -1376,7 +1386,10 @@
           let topWeight = '';
           if (isTopSetRow) {
             topWeight = getStageTopWeight(ex.mainKey);
-            if (savedW === null || savedW === '') savedW = topWeight;
+            // 아직 수행 횟수가 기록되지 않은 경우 5kg 단위 최신 자동 중량으로 표시
+            if (savedW === null || savedW === '' || savedR === '') {
+              savedW = topWeight;
+            }
           } else {
             if (savedW === null) savedW = '';
           }
@@ -1397,7 +1410,7 @@
               <td>
                 <input type="number" step="0.5" id="${inputIdW}" value="${savedW}" 
                   class="${isTopSetRow ? 'topset-input' : ''}" 
-                  placeholder="${isTopSetRow ? topWeight : '직접입력'}"
+                  placeholder="${isTopSetRow ? topWeight : (isAssistPullup ? '보조무게' : '직접입력')}"
                   oninput="onSetInputChange('${d.dayId}', '${stage}', '${ex.name}', '${ex.id}', ${ex.sets}, ${timerSeconds})" />
               </td>
               <td>
@@ -1967,13 +1980,22 @@
 
         if (d.isRest) return;
 
+        const defaultWeight = parseFloat(document.getElementById('weight')?.value) || 72;
+        const curDayWeight = (!isNaN(wVal) && wVal > 0) ? wVal : defaultWeight;
+
         d.exercises.forEach(ex => {
           const cat = getExerciseCategory(ex.name);
+          const isAssistPullup = ex.name.replace(/\s+/g, '').includes('어시스트풀업');
           let exVol = 0;
           for (let s = 1; s <= ex.sets; s++) {
-            const w = parseFloat(localStorage.getItem(`inp_${stKey}_${d.dayId}_${ex.id}_s${s}_w`)) || 0;
-            const r = parseFloat(localStorage.getItem(`inp_${stKey}_${d.dayId}_${ex.id}_s${s}_r`)) || 0;
-            exVol += (w * r);
+            const rawW = localStorage.getItem(`inp_${stKey}_${d.dayId}_${ex.id}_s${s}_w`);
+            const rawR = localStorage.getItem(`inp_${stKey}_${d.dayId}_${ex.id}_s${s}_r`);
+            if (rawW !== null && rawR !== null && rawW !== '' && rawR !== '') {
+              const w = parseFloat(rawW) || 0;
+              const r = parseFloat(rawR) || 0;
+              const effectiveW = isAssistPullup ? Math.max(0, curDayWeight - w) : w;
+              exVol += (effectiveW * r);
+            }
           }
 
           if (cat === 'chest') chestSum += exVol;
@@ -2354,16 +2376,32 @@
     template.forEach(d => {
       if (d.isRest) return;
       let dayTotal = 0;
+
+      // 당일 체중 확인 (입력값 -> 로컬저장값 -> 기본값)
+      const dayWeightInp = document.getElementById(`inp_${stage}_${d.dayId}_weight`);
+      const defaultWeight = parseFloat(document.getElementById('weight')?.value) || 72;
+      let curBodyWeight = (dayWeightInp && parseFloat(dayWeightInp.value) > 0)
+        ? parseFloat(dayWeightInp.value)
+        : (parseFloat(localStorage.getItem(`inp_${stage}_${d.dayId}_weight`)) || defaultWeight);
+
       d.exercises.forEach(ex => {
+        const isAssistPullup = ex.name.replace(/\s+/g, '').includes('어시스트풀업');
         for (let s = 1; s <= ex.sets; s++) {
           const wInp = document.getElementById(`inp_${stage}_${d.dayId}_${ex.id}_s${s}_w`);
           const rInp = document.getElementById(`inp_${stage}_${d.dayId}_${ex.id}_s${s}_r`);
           const volEl = document.getElementById(`vol_${stage}_${d.dayId}_${ex.id}_s${s}`);
 
           if (wInp && rInp && volEl) {
+            const hasW = (wInp.value !== null && wInp.value.trim() !== '');
+            const hasR = (rInp.value !== null && rInp.value.trim() !== '');
             const w = parseFloat(wInp.value) || 0;
             const r = parseFloat(rInp.value) || 0;
-            const setVol = Math.round(w * r);
+
+            let setVol = 0;
+            if (hasW && hasR && r > 0) {
+              const effectiveW = isAssistPullup ? Math.max(0, curBodyWeight - w) : w;
+              setVol = Math.round(effectiveW * r);
+            }
             volEl.innerText = setVol.toLocaleString() + ' kg';
             dayTotal += setVol;
           }
@@ -2401,7 +2439,13 @@
     let totalVolume = 0;
     const exSummaries = [];
 
+    const defaultWeight = parseFloat(document.getElementById('weight')?.value) || 72;
+    const curBodyWeight = (savedWeight !== '-' && !isNaN(parseFloat(savedWeight))) 
+      ? parseFloat(savedWeight) 
+      : defaultWeight;
+
     dayData.exercises.forEach(ex => {
+      const isAssistPullup = ex.name.replace(/\s+/g, '').includes('어시스트풀업');
       const setsData = [];
       for (let s = 1; s <= ex.sets; s++) {
         const wInp = document.getElementById(`inp_${stage}_${dayId}_${ex.id}_s${s}_w`);
@@ -2410,11 +2454,14 @@
         const r = (rInp && rInp.value) ? parseFloat(rInp.value) : 0;
         const isTop = (ex.isMain && s === 3);
 
-        if (w > 0 && r > 0) {
-          totalVolume += (w * r);
-          setsData.push({ set: s, w, r, isTop });
+        const effectiveW = isAssistPullup ? Math.max(0, curBodyWeight - w) : w;
+
+        if (r > 0 && wInp && wInp.value !== '') {
+          const setVol = Math.round(effectiveW * r);
+          totalVolume += setVol;
+          setsData.push({ set: s, w, r, isTop, effectiveW, setVol });
         } else if (wInp && wInp.value) {
-          setsData.push({ set: s, w, r: 0, isTop });
+          setsData.push({ set: s, w, r: 0, isTop, effectiveW, setVol: 0 });
         }
       }
 
@@ -2426,6 +2473,7 @@
         name: ex.name,
         type: finalMethod,
         isMain: ex.isMain,
+        isAssistPullup: isAssistPullup,
         sets: setsData
       });
     });
@@ -2523,10 +2571,12 @@
           const setTag = s.isTop ? `🎯 ${s.set}세트 (탑세트)` : `   ${s.set}세트`;
           ctx.fillText(setTag, 52, currentY + 16);
 
-          const weightReps = `${s.w} kg  ×  ${s.r} 회`;
+          const weightReps = ex.isAssistPullup
+            ? `보조 ${s.w}kg (${Math.round(s.effectiveW)}kg) × ${s.r}회`
+            : `${s.w} kg  ×  ${s.r} 회`;
           ctx.fillText(weightReps, 230, currentY + 16);
 
-          const setVol = (s.w * s.r);
+          const setVol = s.setVol !== undefined ? s.setVol : Math.round((s.effectiveW || s.w) * s.r);
           ctx.fillStyle = '#94a3b8';
           ctx.textAlign = 'right';
           ctx.fillText(setVol > 0 ? `${setVol.toLocaleString()} kg` : '-', canvas.width - 52, currentY + 16);
