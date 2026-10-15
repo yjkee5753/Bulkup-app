@@ -751,15 +751,18 @@
       });
       if (!matchedEx) return null;
 
+      const isSitupEx = cleanTargetName.includes("윗몸일으키기");
+
       // 1) 해당 세트 번호 우선 탐색
       let w = localStorage.getItem(`inp_${stKey}_${dId}_${matchedEx.id}_s${setIndex}_w`);
       let r = localStorage.getItem(`inp_${stKey}_${dId}_${matchedEx.id}_s${setIndex}_r`);
-      if (w !== null && w !== '' && parseFloat(w) > 0) {
+      const hasR = (r !== null && r !== '' && parseInt(r, 10) > 0);
+      if ((w !== null && w !== '' && parseFloat(w) > 0) || (isSitupEx && hasR)) {
         return {
           stage: stKey,
           dayId: dId,
-          weight: parseFloat(w),
-          reps: (r !== null && r !== '' && parseInt(r, 10) > 0) ? parseInt(r, 10) : null
+          weight: parseFloat(w) || 0,
+          reps: hasR ? parseInt(r, 10) : null
         };
       }
 
@@ -767,12 +770,13 @@
       for (let s = matchedEx.sets; s >= 1; s--) {
         let sw = localStorage.getItem(`inp_${stKey}_${dId}_${matchedEx.id}_s${s}_w`);
         let sr = localStorage.getItem(`inp_${stKey}_${dId}_${matchedEx.id}_s${s}_r`);
-        if (sw !== null && sw !== '' && parseFloat(sw) > 0) {
+        const sHasR = (sr !== null && sr !== '' && parseInt(sr, 10) > 0);
+        if ((sw !== null && sw !== '' && parseFloat(sw) > 0) || (isSitupEx && sHasR)) {
           return {
             stage: stKey,
             dayId: dId,
-            weight: parseFloat(sw),
-            reps: (sr !== null && sr !== '' && parseInt(sr, 10) > 0) ? parseInt(sr, 10) : null
+            weight: parseFloat(sw) || 0,
+            reps: sHasR ? parseInt(sr, 10) : null
           };
         }
       }
@@ -1428,11 +1432,17 @@
         const repsText = ex.isMain ? cfg.topReps : (ex.isDynamic ? cfg.subReps : ex.reps);
         const rirText = ex.isMain ? cfg.topRIR : (ex.isDynamic ? cfg.subRIR : ex.rir);
         const isAssistPullup = ex.name.replace(/\s+/g, '').includes('어시스트풀업');
+        const isSitup = ex.name.replace(/\s+/g, '').includes('윗몸일으키기');
 
         const timerKey = `${stage}_${d.dayId}_${ex.id}`;
         initOrGetTimerState(stage, d.dayId, ex.id, timerSeconds);
 
-        const pullupVolNotice = isAssistPullup ? ' | <span style="color:var(--accent); font-weight:600;">💡 볼륨 = (체중 - 보조무게) × 횟수</span>' : '';
+        let volNoticeHtml = '';
+        if (isAssistPullup) {
+          volNoticeHtml = ' | <span style="color:var(--accent); font-weight:600;">💡 볼륨 = (체중 - 보조무게) × 횟수</span>';
+        } else if (isSitup) {
+          volNoticeHtml = ' | <span style="color:var(--accent); font-weight:600;">💡 볼륨 = (체중 + 추가중량) × 횟수 (맨몸=체중)</span>';
+        }
 
         html += `
           <div class="ex-box">
@@ -1441,7 +1451,7 @@
                 <span class="ex-name">${ex.name}</span>
                 ${badgeHtml}
               </div>
-              <span class="ex-meta">권장 휴식: <strong>${restText}</strong> | 목표: ${repsText} (${rirText})${pullupVolNotice}</span>
+              <span class="ex-meta">권장 휴식: <strong>${restText}</strong> | 목표: ${repsText} (${rirText})${volNoticeHtml}</span>
             </div>
 
             <!-- ⏱️ H열 휴식시간 연동 실시간 인터랙티브 타이머 바 -->
@@ -1500,10 +1510,12 @@
           let placeholderW = '';
           if (isTopSetRow) {
             placeholderW = topWeight;
-          } else if (prevRec) {
+          } else if (prevRec && (!isSitup || prevRec.weight > 0)) {
             placeholderW = `${prevRec.weight}`;
           } else if (isAssistPullup) {
             placeholderW = '보조무게';
+          } else if (isSitup) {
+            placeholderW = '0(맨몸)';
           } else {
             placeholderW = '직접입력';
           }
@@ -1513,11 +1525,15 @@
             const stName = prevRec.stage.includes('단계') ? prevRec.stage : (prevRec.stage + '단계');
             const dayNum = prevRec.dayId.replace('day', '') + '일차';
             const repTxt = prevRec.reps ? ` (${prevRec.reps}회)` : '';
+            let weightBadgeText = `직전 ${prevRec.weight}kg`;
+            if (isSitup) {
+              weightBadgeText = prevRec.weight > 0 ? `직전 +${prevRec.weight}kg` : `직전 맨몸`;
+            }
             prevHintHtml = `
               <div class="prev-weight-tag" 
                 onclick="applyPrevWeight('${inputIdW}', ${prevRec.weight}, '${d.dayId}', '${stage}', '${ex.name}', '${ex.id}', ${ex.sets}, ${timerSeconds})" 
-                title="[${stName} ${dayNum}] 직전 수행: ${prevRec.weight}kg${repTxt} (클릭 시 자동 입력)">
-                직전 ${prevRec.weight}kg${prevRec.reps ? `<span style="opacity:0.85; font-size:0.65rem;">(${prevRec.reps}회)</span>` : ''}
+                title="[${stName} ${dayNum}] 직전 수행: ${isSitup && prevRec.weight === 0 ? '맨몸' : (prevRec.weight + 'kg')}${repTxt} (클릭 시 자동 입력)">
+                ${weightBadgeText}${prevRec.reps ? `<span style="opacity:0.85; font-size:0.65rem;">(${prevRec.reps}회)</span>` : ''}
               </div>
             `;
           }
@@ -2120,15 +2136,23 @@
         d.exercises.forEach(ex => {
           const cat = getExerciseCategory(ex.name);
           const isAssistPullup = ex.name.replace(/\s+/g, '').includes('어시스트풀업');
+          const isSitup = ex.name.replace(/\s+/g, '').includes('윗몸일으키기');
           let exVol = 0;
           for (let s = 1; s <= ex.sets; s++) {
             const rawW = localStorage.getItem(`inp_${stKey}_${d.dayId}_${ex.id}_s${s}_w`);
             const rawR = localStorage.getItem(`inp_${stKey}_${d.dayId}_${ex.id}_s${s}_r`);
-            if (rawW !== null && rawR !== null && rawW !== '' && rawR !== '') {
+            const hasW = (rawW !== null && rawW !== '');
+            const hasR = (rawR !== null && rawR !== '');
+            if (hasR && parseFloat(rawR) > 0) {
               const w = parseFloat(rawW) || 0;
               const r = parseFloat(rawR) || 0;
-              const effectiveW = isAssistPullup ? Math.max(0, curDayWeight - w) : w;
-              exVol += (effectiveW * r);
+              if (isSitup) {
+                const effectiveW = curDayWeight + w;
+                exVol += (effectiveW * r);
+              } else if (hasW) {
+                const effectiveW = isAssistPullup ? Math.max(0, curDayWeight - w) : w;
+                exVol += (effectiveW * r);
+              }
             }
           }
 
@@ -2520,6 +2544,7 @@
 
       d.exercises.forEach(ex => {
         const isAssistPullup = ex.name.replace(/\s+/g, '').includes('어시스트풀업');
+        const isSitup = ex.name.replace(/\s+/g, '').includes('윗몸일으키기');
         for (let s = 1; s <= ex.sets; s++) {
           const wInp = document.getElementById(`inp_${stage}_${d.dayId}_${ex.id}_s${s}_w`);
           const rInp = document.getElementById(`inp_${stage}_${d.dayId}_${ex.id}_s${s}_r`);
@@ -2532,9 +2557,15 @@
             const r = parseFloat(rInp.value) || 0;
 
             let setVol = 0;
-            if (hasW && hasR && r > 0) {
-              const effectiveW = isAssistPullup ? Math.max(0, curBodyWeight - w) : w;
-              setVol = Math.round(effectiveW * r);
+            if (hasR && r > 0) {
+              if (isSitup) {
+                // 윗몸일으키기: (체중 + 추가중량) × 횟수 (중량 미입력 시 맨몸 체중으로 자동 계산)
+                const effectiveW = curBodyWeight + w;
+                setVol = Math.round(effectiveW * r);
+              } else if (hasW) {
+                const effectiveW = isAssistPullup ? Math.max(0, curBodyWeight - w) : w;
+                setVol = Math.round(effectiveW * r);
+              }
             }
             volEl.innerText = setVol.toLocaleString() + ' kg';
             dayTotal += setVol;
@@ -2580,21 +2611,28 @@
 
     dayData.exercises.forEach(ex => {
       const isAssistPullup = ex.name.replace(/\s+/g, '').includes('어시스트풀업');
+      const isSitup = ex.name.replace(/\s+/g, '').includes('윗몸일으키기');
       const setsData = [];
       for (let s = 1; s <= ex.sets; s++) {
         const wInp = document.getElementById(`inp_${stage}_${dayId}_${ex.id}_s${s}_w`);
         const rInp = document.getElementById(`inp_${stage}_${dayId}_${ex.id}_s${s}_r`);
+        const hasW = (wInp && wInp.value !== null && wInp.value.trim() !== '');
         const w = (wInp && wInp.value) ? parseFloat(wInp.value) : 0;
         const r = (rInp && rInp.value) ? parseFloat(rInp.value) : 0;
         const isTop = (ex.isMain && s === 3);
 
-        const effectiveW = isAssistPullup ? Math.max(0, curBodyWeight - w) : w;
+        let effectiveW = w;
+        if (isAssistPullup) {
+          effectiveW = Math.max(0, curBodyWeight - w);
+        } else if (isSitup) {
+          effectiveW = curBodyWeight + w;
+        }
 
-        if (r > 0 && wInp && wInp.value !== '') {
+        if (r > 0 && (hasW || isSitup)) {
           const setVol = Math.round(effectiveW * r);
           totalVolume += setVol;
           setsData.push({ set: s, w, r, isTop, effectiveW, setVol });
-        } else if (wInp && wInp.value) {
+        } else if (hasW) {
           setsData.push({ set: s, w, r: 0, isTop, effectiveW, setVol: 0 });
         }
       }
@@ -2608,6 +2646,7 @@
         type: finalMethod,
         isMain: ex.isMain,
         isAssistPullup: isAssistPullup,
+        isSitup: isSitup,
         sets: setsData
       });
     });
@@ -2705,9 +2744,16 @@
           const setTag = s.isTop ? `🎯 ${s.set}세트 (탑세트)` : `   ${s.set}세트`;
           ctx.fillText(setTag, 52, currentY + 16);
 
-          const weightReps = ex.isAssistPullup
-            ? `보조 ${s.w}kg (${Math.round(s.effectiveW)}kg) × ${s.r}회`
-            : `${s.w} kg  ×  ${s.r} 회`;
+          let weightReps = '';
+          if (ex.isAssistPullup) {
+            weightReps = `보조 ${s.w}kg (${Math.round(s.effectiveW)}kg) × ${s.r}회`;
+          } else if (ex.isSitup) {
+            weightReps = s.w > 0
+              ? `맨몸+${s.w}kg (${Math.round(s.effectiveW)}kg) × ${s.r}회`
+              : `맨몸 (${Math.round(s.effectiveW)}kg) × ${s.r}회`;
+          } else {
+            weightReps = `${s.w} kg  ×  ${s.r} 회`;
+          }
           ctx.fillText(weightReps, 230, currentY + 16);
 
           const setVol = s.setVol !== undefined ? s.setVol : Math.round((s.effectiveW || s.w) * s.r);
